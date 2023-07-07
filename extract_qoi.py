@@ -4,31 +4,19 @@
 import os
 import pandas as pd
 import warnings
+from FileSeries import *
 
-def extract_qoi(QoI, folder = "", in_sub_folder = "Raw_Data", out_sub_folder = "Data_with_outliers", new_names = []):
+def extract_qoi(Files, QoI, new_names = []):
     # Extracts columns of interest from a csv files, then removes rows with missing values
-    # dataset = subfolder in which csv files are contained
-    # suffix = suffix which is to be removed from csv files
-    # Path to parent folder of data
-    
-    wd = os.path.abspath("") # Get working directory
-    in_path = os.path.join(wd,folder,in_sub_folder)
-    # Possibly pass in kwargs?
-    if out_sub_folder == "":
-        out_path = in_path
-    else:
-        out_path = os.path.join(wd,folder,out_sub_folder)
-        
-    # Create out_path if it doesn't already exist
-    if not(os.path.isdir(out_path)):
-        os.mkdir(out_path)
-        
+    # Files = FileSeries class containing info on the location of input csvs and desired output location
+    # QoI = list of strings indicating which columns are to be extracted
+    # new_names = list of updated names which are to be applied to the columns. Must be the same length as QoI
+       
     # Get filenames
-    filenames = os.listdir(in_path)
+    filenames = os.listdir(Files.in_path)
     # Loop through all files in the folder
     for filename in filenames:
-        print(filename)
-        src = os.path.join(in_path, filename)
+        src = os.path.join(Files.in_path, filename)
         # Load data from csv file, filter for QoI, then drop NaN values
         in_data = pd.read_csv(src, sep = ",")
         out_data = in_data.filter(items=QoI).dropna()
@@ -40,7 +28,7 @@ def extract_qoi(QoI, folder = "", in_sub_folder = "Raw_Data", out_sub_folder = "
                 warnings.warn("Specified number of new_names did not match the selected number of Colummns. Could not rename.")
 
         # Write selected data to paths
-        out_data.to_csv(os.path.join(out_path, filename), sep = ",", index = False)
+        out_data.to_csv(os.path.join(Files.out_path, filename), sep = ",", index = False)
 
 if __name__ == "__main__":
     QoI = ["coor.X [mm]", 
@@ -57,6 +45,7 @@ if __name__ == "__main__":
     
     new_names = ["x", "y", "z", "u", "v", "w", "Exx", "Eyy", "Exy", "EI", "EII"]
 
-    # folder = "..\\Failure\\Processed DIC Data\\Individual Fields of View\\Alvium Pair 03\\Export_2"
-    folder = "..\\Failure\\Processed DIC Data\\Individual Fields of View\\Manta Camera Pair\\Export_2"
-    extract_qoi(QoI, folder = folder, new_names=new_names)
+    folder = "..\\Failure\\Processed DIC Data\\Individual Fields of View\\Alvium Pair 03\\Export_2"
+    # folder = "..\\Failure\\Processed DIC Data\\Individual Fields of View\\Manta Camera Pair\\Export_2"
+    Files = FileSeries(folder=folder,in_sub_folder="Raw_Data",out_sub_folder="Boobs")
+    extract_qoi(Files, QoI, new_names=new_names)

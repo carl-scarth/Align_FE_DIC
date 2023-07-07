@@ -2,24 +2,25 @@
 # as a file series, for which the files should end in some pattern e.g. 1,2,3,4 etc
 
 import os
+import shutil
+from FileSeries import *
 
-def remove_suffix(dataset="Raw_Data", suffix="_0.tiff", out_folder = ""):
-    # dataset = subfolder in which csv files are contained
+def remove_suffix(Files, suffix="_0.tiff"):
+    # Files = FileSeries class containing info on the location of input csvs and desired output location
     # suffix = suffix which is to be removed from csv files
-    # Path to parent folder of data
-    folder = "..\\Failure\\Processed DIC Data\\Individual Fields of View\\Alvium Pair 03\\Export_2"
-    # folder = "..\\Failure\\Processed DIC Data\\Individual Fields of View\\Manta Camera Pair\\Export_2"
-    wd = os.path.abspath("") # Get working directory
-    in_path = os.path.join(wd,folder,dataset)
-    # Possibly pass in kwargs?
-    if out_folder == "":
-        out_path = in_path
-    
-    # Try to take this outside of function
-    for filename in os.listdir(in_path):
-        src = os.path.join(in_path, filename)
-        dst = os.path.join(out_path, filename.replace(suffix + ".csv",".csv"))
-        os.rename(src, dst)
+    # Loop through each of the files in the input folder, rename, then save to output folder
+    for filename in os.listdir(Files.in_path):
+        src = os.path.join(Files.in_path, filename)
+        dst = os.path.join(Files.out_path, filename.replace(suffix + ".csv",".csv"))
+        # If writing to the same directory rename, otherwise make a copy
+        if Files.in_path == Files.out_path:
+            os.rename(src, dst)
+        else:
+            shutil.copy(src,dst)
 
 if __name__ == "__main__":
-    remove_suffix()
+    # folder = "..\\Failure\\Processed DIC Data\\Individual Fields of View\\Manta Camera Pair\\Export_2"
+    # folder = "..\\Failure\\Processed DIC Data\\Individual Fields of View\\Alvium Pair 03\\Export_1"
+    folder = "..\\150kN_Data\\Camera_Pair_0_3"
+    Files = FileSeries(folder=folder,in_sub_folder="100kN",out_sub_folder="")
+    remove_suffix(Files)
