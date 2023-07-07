@@ -47,5 +47,5 @@ if __name__ == "__main__":
 
     folder = "..\\Failure\\Processed DIC Data\\Individual Fields of View\\Alvium Pair 03\\Export_2"
     # folder = "..\\Failure\\Processed DIC Data\\Individual Fields of View\\Manta Camera Pair\\Export_2"
-    Files = FileSeries(folder=folder,in_sub_folder="Raw_Data",out_sub_folder="Boobs")
+    Files = FileSeries(folder=folder,in_sub_folder="Raw_Data",out_sub_folder="Data_with_outliers")
     extract_qoi(Files, QoI, new_names=new_names)
