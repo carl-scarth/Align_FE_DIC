@@ -12,10 +12,8 @@ def extract_qoi(Files, QoI, new_names = []):
     # QoI = list of strings indicating which columns are to be extracted
     # new_names = list of updated names which are to be applied to the columns. Must be the same length as QoI
        
-    # Get filenames
-    filenames = os.listdir(Files.in_path)
     # Loop through all files in the folder
-    for filename in filenames:
+    for filename in Files.in_filenames:
         src = os.path.join(Files.in_path, filename)
         # Load data from csv file, filter for QoI, then drop NaN values
         in_data = pd.read_csv(src, sep = ",")
@@ -47,5 +45,6 @@ if __name__ == "__main__":
 
     folder = "..\\Failure\\Processed DIC Data\\Individual Fields of View\\Alvium Pair 03\\Export_2"
     # folder = "..\\Failure\\Processed DIC Data\\Individual Fields of View\\Manta Camera Pair\\Export_2"
-    Files = FileSeries(folder=folder,in_sub_folder="Raw_Data",out_sub_folder="Data_with_outliers")
+    # Files = FileSeries(folder=folder,in_sub_folder="Raw_Data",out_sub_folder="Data_with_outliers")
+    Files = FileSeries(folder=folder,in_sub_folder="Raw_Data",out_sub_folder="Test")
     extract_qoi(Files, QoI, new_names=new_names)

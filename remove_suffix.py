@@ -9,7 +9,7 @@ def remove_suffix(Files, suffix="_0.tiff"):
     # Files = FileSeries class containing info on the location of input csvs and desired output location
     # suffix = suffix which is to be removed from csv files
     # Loop through each of the files in the input folder, rename, then save to output folder
-    for filename in os.listdir(Files.in_path):
+    for filename in Files.in_filenames:
         src = os.path.join(Files.in_path, filename)
         dst = os.path.join(Files.out_path, filename.replace(suffix + ".csv",".csv"))
         # If writing to the same directory rename, otherwise make a copy
@@ -22,5 +22,5 @@ if __name__ == "__main__":
     # folder = "..\\Failure\\Processed DIC Data\\Individual Fields of View\\Manta Camera Pair\\Export_2"
     # folder = "..\\Failure\\Processed DIC Data\\Individual Fields of View\\Alvium Pair 03\\Export_1"
     folder = "..\\150kN_Data\\Camera_Pair_0_3"
-    Files = FileSeries(folder=folder,in_sub_folder="100kN",out_sub_folder="")
+    Files = FileSeries(folder=folder,in_sub_folder="150kN",out_sub_folder="")
     remove_suffix(Files)
