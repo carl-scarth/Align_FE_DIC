@@ -5,6 +5,7 @@ import os
 import shutil
 from FileSeries import *
 
+# Directly renames files, or copies to a new folder with updated names
 def remove_suffix(Files, suffix="_0.tiff"):
     # Files = FileSeries class containing info on the location of input csvs and desired output location
     # suffix = suffix which is to be removed from csv files
@@ -18,9 +19,13 @@ def remove_suffix(Files, suffix="_0.tiff"):
         else:
             shutil.copy(src,dst)
 
+def remove_suffix_file_series(Files, suffix="_0.tiff"):
+    # Updates the list of names in a FileSeries object to remove the suffix. To be used when multiple
+    # operations are performed and a new csv is written
+    Files.out_filenames = [filename.replace(suffix + ".csv",".csv") for filename in Files.in_filenames]
+
 if __name__ == "__main__":
     # folder = "..\\Failure\\Processed DIC Data\\Individual Fields of View\\Manta Camera Pair\\Export_2"
-    # folder = "..\\Failure\\Processed DIC Data\\Individual Fields of View\\Alvium Pair 03\\Export_1"
-    folder = "..\\150kN_Data\\Camera_Pair_0_3"
-    Files = FileSeries(folder=folder,in_sub_folder="150kN",out_sub_folder="")
+    folder = "..\\Failure\\Processed DIC Data\\Individual Fields of View\\Alvium Pair 03\\Export_2"
+    Files = FileSeries(folder=folder,in_sub_folder="Raw_data",out_sub_folder="Suffix_removed")
     remove_suffix(Files)
