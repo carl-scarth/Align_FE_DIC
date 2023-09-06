@@ -1,4 +1,5 @@
 import os
+import pandas as pd
 from utils import *
 
 class FileSeries:
@@ -27,14 +28,25 @@ class FileSeries:
 
     def get_files(self):
         # Create a list of SingleFile objects
-        self.files = [SingleFile(filename, self.in_path, self.out_path) for filename in os.listdir((self.in_path))]
+        self.files = [File(filename, self.in_path, self.out_path) for filename in os.listdir((self.in_path))]
 
-    def dump(self):
+    def read_data(self, **kwargs):
+        # Consider adding a progress bar
+        # use kwargs to pass keywords to pandas read_csv function
+        print("Reading data")
+        for i, File in enumerate(self.files):
+            print(i)
+            File.read_file(**kwargs)
+
+    def dump(self, **kwargs):
         # For just renaming it's quicker to copy. Incorporate this here when ready...
-        # Write processed data to csv files
-        asds
+        # Consider adding progress bar
+        print("Writing Processed data")
+        for i, File in enumerate(self.files):
+            print(i)
+            File.write_data(self, **kwargs)
 
-class SingleFile:
+class File:
     # Properties of an individual file within a FileSeries
     def __init__(self, filename, in_path, out_path):
         self.in_filename = filename
@@ -48,3 +60,11 @@ class SingleFile:
     def update_dst(self):
         # Update the destination address if this is renamed
         self.dst = os.path.join(self.out_path, self.out_filename)
+
+    def read_file(self, **kwargs):
+        # Use kwargs to pass options to pandas read_csv function
+        self.data = pd.read_csv(self.src, **kwargs)
+
+    def write_data(self, sep = ",", index = False, **kwargs):
+        # Use kwargs to pass writing options to pandas
+        self.data.to_csv(self.dst, sep = sep, index = index)
