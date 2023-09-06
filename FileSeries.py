@@ -15,9 +15,8 @@ class FileSeries:
         self.get_paths()
         # Create a directory for writing output if required
         make_out_folder(self.out_path)
-        # Get all filenames in output folder
-        self.get_filenames()
-        # Possibly also join with in path
+        # Create a list of all files in the in_sub_folder
+        self.get_files()
 
     def get_paths(self):
         # Get full path to which data is contained
@@ -26,8 +25,26 @@ class FileSeries:
         self.in_path = os.path.join(wd,self.folder,self.in_sub_folder)
         self.out_path = os.path.join(wd,self.folder,self.out_sub_folder)
 
-    def get_filenames(self):
-        # Get the name of all csv files in the input folder
-        self.in_filenames = [file for file in os.listdir(self.in_path) if ".csv" in file]
-        # out filenames will be updated if "remove_suffix" is called
-        self.out_filenames = self.in_filenames
+    def get_files(self):
+        # Create a list of SingleFile objects
+        self.files = [SingleFile(filename, self.in_path, self.out_path) for filename in os.listdir((self.in_path))]
+
+    def dump(self):
+        # For just renaming it's quicker to copy. Incorporate this here when ready...
+        # Write processed data to csv files
+        asds
+
+class SingleFile:
+    # Properties of an individual file within a FileSeries
+    def __init__(self, filename, in_path, out_path):
+        self.in_filename = filename
+        self.out_filename = filename # Default output filename is the same as the input
+        self.in_path = in_path
+        self.out_path = out_path
+        self.src = os.path.join(self.in_path, filename)
+        self.dst = os.path.join(self.out_path, filename)
+        self.data = [] # add data from csv files
+
+    def update_dst(self):
+        # Update the destination address if this is renamed
+        self.dst = os.path.join(self.out_path, self.out_filename)
