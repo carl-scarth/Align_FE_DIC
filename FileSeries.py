@@ -29,3 +29,5 @@ class FileSeries:
     def get_filenames(self):
         # Get the name of all csv files in the input folder
         self.in_filenames = [file for file in os.listdir(self.in_path) if ".csv" in file]
+        # out filenames will be updated if "remove_suffix" is called
+        self.out_filenames = self.in_filenames
