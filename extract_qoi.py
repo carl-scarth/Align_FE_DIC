@@ -11,12 +11,11 @@ def extract_qoi(Files, QoI, new_names = []):
     # Files = FileSeries class containing info on the location of input csvs and desired output location
     # QoI = list of strings indicating which columns are to be extracted
     # new_names = list of updated names which are to be applied to the columns. Must be the same length as QoI
-       
+    
     # Loop through all files in the folder
-    for filename in Files.in_filenames:
-        src = os.path.join(Files.in_path, filename)
+    for File in Files.files:
         # Load data from csv file, filter for QoI, then drop NaN values
-        in_data = pd.read_csv(src, sep = ",")
+        in_data = pd.read_csv(File.src, sep = ",")
         out_data = in_data.filter(items=QoI).dropna()
         # Rename Quantities of Interest if required
         if new_names:
@@ -26,7 +25,7 @@ def extract_qoi(Files, QoI, new_names = []):
                 warnings.warn("Specified number of new_names did not match the selected number of Colummns. Could not rename.")
 
         # Write selected data to paths
-        out_data.to_csv(os.path.join(Files.out_path, filename), sep = ",", index = False)
+        out_data.to_csv(File.dst, sep = ",", index = False)
 
 if __name__ == "__main__":
     QoI = ["coor.X [mm]", 
@@ -45,6 +44,5 @@ if __name__ == "__main__":
 
     folder = "..\\Failure\\Processed DIC Data\\Individual Fields of View\\Alvium Pair 03\\Export_2"
     # folder = "..\\Failure\\Processed DIC Data\\Individual Fields of View\\Manta Camera Pair\\Export_2"
-    # Files = FileSeries(folder=folder,in_sub_folder="Raw_Data",out_sub_folder="Data_with_outliers")
-    Files = FileSeries(folder=folder,in_sub_folder="Raw_Data",out_sub_folder="Test")
+    Files = FileSeries(folder=folder,in_sub_folder="Suffix_removed",out_sub_folder="Extracted_qoi")
     extract_qoi(Files, QoI, new_names=new_names)
