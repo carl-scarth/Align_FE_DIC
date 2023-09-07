@@ -1,9 +1,7 @@
 
 # Takes in test data, extracts quantities of interest, then dumps resulting csvs into a folder
 
-import os
 import pandas as pd
-import warnings
 from FileSeries import *
 
 def extract_qoi(Files, QoI, new_names = []):
@@ -13,19 +11,10 @@ def extract_qoi(Files, QoI, new_names = []):
     # new_names = list of updated names which are to be applied to the columns. Must be the same length as QoI
     
     # Loop through all files in the folder
-    for File in Files.files:
-        # Load data from csv file, filter for QoI, then drop NaN values
-        in_data = pd.read_csv(File.src, sep = ",")
-        out_data = in_data.filter(items=QoI).dropna()
-        # Rename Quantities of Interest if required
-        if new_names:
-            if len(out_data.columns) == len(new_names):
-                out_data.columns = new_names
-            else:
-                warnings.warn("Specified number of new_names did not match the selected number of Colummns. Could not rename.")
-
-        # Write selected data to paths
-        out_data.to_csv(File.dst, sep = ",", index = False)
+    Files.read_data(sep=",")
+    Files.extract_qoi(QoI, new_names)
+    # Write selected data to paths
+    Files.dump()
 
 if __name__ == "__main__":
     QoI = ["coor.X [mm]", 

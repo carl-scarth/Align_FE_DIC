@@ -1,5 +1,6 @@
 import os
 import pandas as pd
+import warnings
 from utils import *
 
 class FileSeries:
@@ -38,13 +39,22 @@ class FileSeries:
             print(i)
             File.read_file(**kwargs)
 
+    def extract_qoi(self, qoi, new_names = [], dropna = True, **kwargs):
+        # Extracts columns of interest from a csv files, then removes rows with missing values
+        # QoI = list of strings indicating which columns are to be extracted
+        # new_names = list of updated names which are to be applied to the columns. Must be the same length as QoI
+        print("Filtering data")
+        for i, File in enumerate(self.files):
+            print(i)
+            File.filter_data(qoi, new_names, dropna, **kwargs)
+
     def dump(self, **kwargs):
         # For just renaming it's quicker to copy. Incorporate this here when ready...
         # Consider adding progress bar
         print("Writing Processed data")
         for i, File in enumerate(self.files):
             print(i)
-            File.write_data(self, **kwargs)
+            File.write_data(**kwargs)
 
 class File:
     # Properties of an individual file within a FileSeries
@@ -64,6 +74,18 @@ class File:
     def read_file(self, **kwargs):
         # Use kwargs to pass options to pandas read_csv function
         self.data = pd.read_csv(self.src, **kwargs)
+
+    def filter_data(self, qoi, new_names = [], dropna = True, **kwargs):
+        self.data = self.data.filter(items=qoi, **kwargs)
+        # Rename columns if requied
+        if new_names:
+            if len(self.data.columns) == len(new_names):
+                self.data.columns = new_names
+            else:
+                warnings.warn("Specified number of new_names did not match the selected number of Colummns. Could not rename.")
+        # Drop na values if required
+        if dropna:
+            self.data.dropna()
 
     def write_data(self, sep = ",", index = False, **kwargs):
         # Use kwargs to pass writing options to pandas
