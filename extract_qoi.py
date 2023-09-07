@@ -1,7 +1,6 @@
 
 # Takes in test data, extracts quantities of interest, then dumps resulting csvs into a folder
 
-import pandas as pd
 from FileSeries import *
 
 def extract_qoi(Files, QoI, new_names = []):
