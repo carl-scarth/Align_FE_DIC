@@ -27,8 +27,6 @@ def transform_coords(Files, label_list, is_displacement = [], R=[], T=[], subscr
     elif len(is_displacement) != len(label_list):
         raise Exception("Number of items in is_displacement must match the number of lists in labels")
 
-    # Read data from csv files
-    Files.read_data()
     # Apply each required transformation
     for i, labels in enumerate(label_list):
         if is_displacement[i]:
@@ -36,7 +34,6 @@ def transform_coords(Files, label_list, is_displacement = [], R=[], T=[], subscr
             Files.apply_func_to_data(lambda x:rotate_translate(x, coord_label=labels, R=R), labels, subscript, message = "Transforming " + ", ".join(labels))
         else:
             Files.apply_func_to_data(lambda x:rotate_translate(x, coord_label=labels, R=R,T=T), labels, subscript, message = "Transforming " + ", ".join(labels))
-    Files.dump()
 
 def rotate_translate(data, coord_label = [], R=[], T=[]):
     # apply a coordinate rotation and transformation to array of coordinates, 
@@ -84,4 +81,6 @@ if __name__ == "__main__":
     R, T = transmat_from_file(transmat_file)
     labels = [["x", "y", "z"],["x_0","y_0","z_0"],["u","v","w"]]
     is_displacement = [False, False, True]
+    Files.read_data()
     transform_coords(Files, labels, is_displacement = is_displacement, R=R, T=T)
+    Files.dump()

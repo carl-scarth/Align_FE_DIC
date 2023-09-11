@@ -6,9 +6,7 @@ def subtract_disp(Files, column_labels = [["x", "u"],["y", "v"],["z","w"]]):
     # Files = FileSeries class containing info on the location of input csvs and desired output location
     # Define list of coordinate indices, and their corresponding displacement index
     # Column inds = list of coordinate labels and the corresponding displacement component
-    Files.read_data()
     Files.apply_func_to_data(lambda x:subtract_columns(x,column_labels), [labels[0] for labels in column_labels], "0", message = "Subtracting displacement")
-    Files.dump()
 
 def subtract_columns(data, column_labels = [["x", "u"],["y", "v"],["z","w"]]):
 
@@ -22,4 +20,6 @@ if __name__ == "__main__":
     folder = "..\\Failure\\Processed DIC Data\\Individual Fields of View\\Alvium Pair 03\\Export_2"
     # folder = "..\\Failure\\Processed DIC Data\\Individual Fields of View\\Manta Camera Pair\\Export_2"
     Files = FileSeries(folder=folder,in_sub_folder="Extracted_qoi",out_sub_folder="Data_subtracted_disp_2")
+    Files.read_data()
     subtract_disp(Files)
+    Files.dump()
