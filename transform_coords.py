@@ -33,15 +33,23 @@ def transform_coords(Files, label_list, is_displacement = [], R=[], T=[], subscr
     for i, labels in enumerate(label_list):
         if is_displacement[i]:
             # If the quantity is a displacement, no need to perform a translation 
-            Files.apply_func_to_data(labels, subscript, lambda xyz:rotate_translate(xyz,R), message = "Transforming " + ", ".join(labels))
+            Files.apply_func_to_data(lambda x:rotate_translate(x, coord_label=labels, R=R), labels, subscript, message = "Transforming " + ", ".join(labels))
         else:
-            Files.apply_func_to_data(labels, subscript, lambda xyz:rotate_translate(xyz,R,T), message = "Transforming " + ", ".join(labels))
+            Files.apply_func_to_data(lambda x:rotate_translate(x, coord_label=labels, R=R,T=T), labels, subscript, message = "Transforming " + ", ".join(labels))
     Files.dump()
 
-def rotate_translate(xyz, R=[], T=[]):
-    # apply a coordinate rotation and transformation to array of coordinates, where xyz is a N x d (N = number of 
-    # samples, d is dimension of coordinates) array of coordinates, R is a d x d rotation matrix, and T is a 
-    # d-dimensional translation vector. If either R or T are not passed the corresponding transformation is not performed
+def rotate_translate(data, coord_label = [], R=[], T=[]):
+    # apply a coordinate rotation and transformation to array of coordinates, 
+    # data can either be a dataframe with coord_label indicating the columns which represent displacement
+    # or the coordinates only, R is a d x d rotation matrix, and T is a  d-dimensional translation vector. 
+    # If either R or T are not passed the corresponding transformation is not performed
+    # If coord label is not past, coordinates are given by the entire dataframe
+    if coord_label:
+        # Extract coordinates from the dataframe if a label has been provided, otherwise use the entire
+        # dataframe
+        xyz = data[coord_label]
+    else:
+        xyz = data
     xyz = xyz.to_numpy() # Convert to numpy
     if len(R)!=0:
         xyz = (R@xyz.T).T
@@ -69,7 +77,7 @@ def transmat_from_file(transmat_file, delimiter=" ", header = False):
 if __name__ == "__main__":
     folder = "..\\Failure\\Processed DIC Data\\Individual Fields of View\\Alvium Pair 03\\Export_2"
     # folder = "..\\Failure\\Processed DIC Data\\Individual Fields of View\\Manta Camera Pair\\Export_2"
-    Files = FileSeries(folder=folder,in_sub_folder="Data_subtracted_disp", out_sub_folder="Data_rotated")  
+    Files = FileSeries(folder=folder,in_sub_folder="Data_subtracted_disp", out_sub_folder="Data_rotated_2")
     # Define file where transformation matrix is stored
     transmat_file = os.path.join(Files.parent_path, "image_0000_transformation_matrix.txt")
     # Read in transformation matrix
