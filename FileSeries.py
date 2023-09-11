@@ -48,19 +48,19 @@ class FileSeries:
             print(i)
             File.filter_data(qoi, new_names, dropna, **kwargs)
 
-    def apply_func_to_data(self, labels, subscript, func, rel_pos = 1, message = []):
+    def apply_func_to_data(self, func, labels, subscript, rel_pos = 1, message = []):
         # Applies a function to every dataframe, and inserts new columns with the results. 
         # Primarily used for coordinate transformations
+        # func = function which is applied to the data given as lambda function
         # labels = labels of columns to which function is applied
         # subscript = subscript added to the label of the new columns
-        # func = function which is applied to the data
         # rel_pos = relative position (to the right of the input column) at which new column is inserted
         # message = optional message printed to the terminal
         if message:
             print(message)
         for i, File in enumerate(self.files):
             print(i)
-            File.insert_columns_with_func(labels, subscript, func, rel_pos)
+            File.insert_columns_with_func(func, labels, subscript, rel_pos)
 
         # Possibly add option to just replace the column if specified by Boolean
 
@@ -103,23 +103,21 @@ class File:
         if dropna:
             self.data.dropna()
 
-    def insert_columns_with_func(self, labels, subscript, func, rel_pos = 1):
+    def insert_columns_with_func(self, func, labels, subscript, rel_pos = 1):
     # Insert new columns in self.data df, to the right of columns with labels in list "labels", with 
     # name appended by "_subscript", and values given by applying function "func" to the original columns
-    # The number of columns must not be changed by the function
     # optional input rel_pos gives the relative position of the new column compared to the original
         if all([label in self.data.columns for label in labels]):
-            # Consider removing the "to_numpy bit and bringing into the function itself"
-            values = self.data[labels]
             # Perform transformation using function
-            values_trans = func(values)
-            if values_trans.shape[1] != len(labels):
-                raise Exception("The number of columns must not be changed by the function")
+            values = func(self.data)
+            if values.shape[1] != len(labels):
+                raise Exception("The number of columns outputted by the function do not match the specified number of labels")
             
             # Insert transformed data into the dataframe
             for i, label in enumerate(labels):
                 in_loc = self.data.columns.get_loc(label)
-                self.data.insert(loc=(in_loc+rel_pos), column=(label+"_"+subscript), value = values_trans[:,i])
+
+                self.data.insert(loc=(in_loc+rel_pos), column=(label+"_"+subscript), value = values[:,i])
         else:
             raise Exception("The specified columns could not be found in the data")
 
