@@ -13,7 +13,7 @@ class FileSeries:
             self.out_sub_folder = self.in_sub_folder
         else:
             self.out_sub_folder = out_sub_folder
-
+        
         self.get_paths()
         # Create a directory for writing output if required
         make_out_folder(self.out_path)
@@ -90,6 +90,7 @@ class File:
     def read_file(self, **kwargs):
         # Use kwargs to pass options to pandas read_csv function
         self.data = pd.read_csv(self.src, **kwargs)
+        self.n_points = self.data.shape[0]
 
     def filter_data(self, qoi, new_names = [], dropna = True, **kwargs):
         self.data = self.data.filter(items=qoi, **kwargs)
@@ -102,6 +103,7 @@ class File:
         # Drop na values if required
         if dropna:
             self.data.dropna()
+            self.n_points = self.data.shape[0]
 
     def insert_columns_with_func(self, func, labels, subscript, rel_pos = 1):
     # Insert new columns in self.data df, to the right of columns with labels in list "labels", with 
