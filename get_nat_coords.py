@@ -91,48 +91,31 @@ def get_nat_coords(Files, Mesh, coord_labels = ["x","y","z"]):
 
     # Loop through all files in the folder
     for File in Files.files:
-        print(File.data)
-        cloud_xyz = File.data[coord_labels].to_numpy() # coordinates
-        print(File.n_points)
-        print(cloud_xyz)
-        
+        cloud_xyz = File.data[coord_labels].to_numpy() # coordinates        
         # Loop through each of the points in the cloud and project onto the surface of the mesh,
         # then perform Newton-Raphson to determine natural coordinates of this point
 
         # Consider moving these into another function once the inner workings of the loop have been tidied
-        # External function below might make sense
+        # Maybe something which performs the outer element search?
         xyz_proj = np.empty([File.n_points,3]) # xyz coordinate of projected point
         hr = np.empty([File.n_points,2]) # Array for storing the natural coordinates of each point
         el_ind = [] # list for storing element containing each point
         conv = [] # list containing how many iterations of the Newton-Raphson were required for each point
         for i, point in enumerate(cloud_xyz):
-            print(point)
             # Find element with the closest centroid to the point, to use as an intial guess for the element
             min_el = find_closest_centroid(point, Mesh.centroids)
-            print(min_el)
-            # Kept in as a sanity check as I don't have the right data on campus
-            print(Mesh.elements[min_el].nodes)
+            
+            # A for loop with a break might be more sensible... Implement on another iterations
 
-            # Boolean to check whether the element the point belongs to has been found
-            el_found = False
+            # Search to determine if the point is found to lie in the chosen element. If  correct element has been 
+            # chosen the natural coordinates will lie between +/-1.0, if not the converged values of these coordinatess
+            # indicate a direction to move in the grid until the correct element is found, or it is determined that the 
+            # point does not lie over the mesh surface
+            el_found = False # Boolean to check whether the element the point belongs to has been found
             hr_n_old = np.array([[np.nan], [np.nan]]) # for storing previous converged value of hr when searching
             # If implementing as a for with conditional, rather than while, do this on the first iteration 
             # for an out-of-bounds element to save doing this for every point...
-            # Consider doing this once the functionality inside the loop has been tidied
-    
-            # Project the point onto the element surface and find the natural coordinates of the projected
-            # point in the coordinate system of that element. Convergence to coordinates outside of the 
-            # bounds of the element indicates that the incorrect element has been chosen. These
-            # then dictate a direction to move in the grid, and a new element is chosen until the correct
-            # element is found, or it is determined that the point does not belong to any element
-
-            # newton_raphson stuff moved to another function for now
-            # Switched to 1,2,3,4 rather than 4,1,5,8 so will need to do sanity checks
-            
-            # A for loop with a break might be more sensible... Implement on another iterations
             while not el_found:                
-                print(Mesh.elements[min_el].centroid)
-                print(Mesh.elements[min_el].n)
                 print(Mesh.elements[min_el].nodes)
                 # Project point onto the surface of the current element, and store result
                 point_proj = proj_point_on_element(point, Mesh.elements[min_el].centroid, Mesh.elements[min_el].n)
@@ -140,8 +123,11 @@ def get_nat_coords(Files, Mesh, coord_labels = ["x","y","z"]):
                 xyz_proj[i,:] = point_proj
                 # Determine natural coordinates for the  point using Newton-Raphson
                 # Continue to update function
-                gh = newton_raphson(Mesh.elements[min_el].nodes)
+                (gh, i_conv) = newton_raphson(point_proj, Mesh.elements[min_el].nodes)
+                print(gh)
+                print(i_conv)
                 # replace hr_n with gh below, reflect the change in nomenclature
+                # replace j with i_conv below
                 sadsad
 
                 # Check if the converged natural coordinates are within the element bounds (these
@@ -179,8 +165,8 @@ def get_nat_coords(Files, Mesh, coord_labels = ["x","y","z"]):
                     # If so, the point doesn't belong to any element and should be deleted
                     if ((row_ind < 0) | (row_ind >= n_y) | (col_ind < 0) | (col_ind >= n_x)):
                         # Return nans for everything so the points may be deleted outside of the loop
-                        min_el = np.nan
-                        j = np.nan
+                        # min_el = np.nan - deleted to provent later issues with pandas - just get rid of probably
+                        # j = np.nan
                         hr_n = np.array([[np.nan], [np.nan]])
                         el_found = True # Break out of the while loop
                     elif np.any(((hr_n < -1) & (hr_n_old > 1)) | ((hr_n > 1) & (hr_n_old < -1))):
@@ -206,70 +192,84 @@ def get_nat_coords(Files, Mesh, coord_labels = ["x","y","z"]):
             conv.append(j)
             hr[i,:] = hr_n.squeeze()
 
-        # Remove points which were found to lie outside of the mesh, identified using nans
-        nan_ind = np.isnan(hr[:,0])
-        hr = hr[np.logical_not(nan_ind),:]
-        xyz_del = xyz_proj[nan_ind,:]
-        xyz_proj = xyz_proj[np.logical_not(nan_ind),:]
-        cloud_data_del = cloud_data[nan_ind]
-        cloud_data = cloud_data[~nan_ind]
-        el_ind = [el for el in el_ind if not np.isnan(el)]
-        conv = [n for n in conv if not np.isnan(n)] 
-        # write adjusted point cloud, and deleted points to csv files
-        # Dictionary of new column names and their positions in the array and output dataframe respectively
-        new_cols = {"x_proj": [0,6], "y_proj": [1,7],"z_proj":[2,8]} 
-        [cloud_data.insert(loc=value[1], column = key, value = pd.Series(xyz_proj[:,value[0]])) for key, value in new_cols.items()]
-        [cloud_data_del.insert(loc=value[1], column = key, value = pd.Series(xyz_del[:,value[0]])) for key, value in new_cols.items()]
-        # Also append converged, natural coordinates, element index and  number of iterations
-        cloud_data = pd.concat([cloud_data, pd.DataFrame(hr, columns=["h", "r"])],axis=1)
-        cloud_data["Element"] = el_ind
-        cloud_data["Convergence Iteration"] = conv
-        cloud_data.to_csv(os.path.join(out_path, filename), sep=",", index=False)
-        cloud_data_del.to_csv(os.path.join(out_path_del, filename), sep=",", index=False)
+        # Remove points which were found to lie outside of the mesh, identified using nans in h and r
 
-def newton_raphson(nodes, GH = np.array([[-1.0, 1.0, 1.0, -1.0],[-1.0, -1.0, 1.0, 1.0]]), gh_0 = np.array([[0.0], [0.0]]), res_tol = 0.05**2, n_max = 10):
-    # nodes = numpy array where each row is the coordinates, ordered using the abaqus convention for quads
+    # Dictionary of new column names and their positions in the array and output dataframe respectively
+    new_cols = {"x_proj": [0,4], "y_proj": [1,9],"z_proj":[2,14]}
+    # Add new entries to the cloud_data dataframe
+    hr = pd.DataFrame(hr, columns=["h","r"])
+    [cloud_data.insert(loc=value[1], column = key, value = pd.Series(xyz_proj[:,value[0]])) for key, value in new_cols.items()]
+    cloud_data = pd.concat([cloud_data, hr],axis=1)
+    cloud_data["Element"] = pd.Series(el_ind).astype(int)
+    cloud_data["Conv_Iteration"] = pd.Series(conv).astype(int)
+    # Identify rows with na value for h and retain for output, dropping h, r, Element and Conv_Teration, as these 
+    # do not apply to deleted data
+    cloud_data_del = cloud_data[pd.isna(cloud_data["h"])].drop(labels = ["h","r","Element", "Conv_Iteration"],axis=1)
+    # Drop rows with nas from main dataframe
+    cloud_data = cloud_data.dropna()
+
+    # Switched to 1,2,3,4 rather than 4,1,5,8 so will need to do sanity checks!!!!
+    
+    # Old code, retain for now
+    #nan_ind = np.isnan(hr[:,0])
+    #hr = hr[np.logical_not(nan_ind),:]
+    #xyz_del = xyz_proj[nan_ind,:]
+    #xyz_proj = xyz_proj[np.logical_not(nan_ind),:]
+    #cloud_data_del = cloud_data[nan_ind]
+    #cloud_data = cloud_data[~nan_ind]
+    #el_ind = [el for el in el_ind if not np.isnan(el)]
+    #conv = [n for n in conv if not np.isnan(n)] 
+    # write adjusted point cloud, and deleted points to csv files
+    # [cloud_data.insert(loc=value[1], column = key, value = pd.Series(xyz_proj[:,value[0]])) for key, value in new_cols.items()]
+    # [cloud_data_del.insert(loc=value[1], column = key, value = pd.Series(xyz_del[:,value[0]])) for key, value in new_cols.items()]
+    # Also append converged, natural coordinates, element index and  number of iterations
+    # cloud_data = pd.concat([cloud_data, pd.DataFrame(hr, columns=["h", "r"])],axis=1,ignore_index=True)
+    #cloud_data["Element"] = el_ind
+    #cloud_data["Convergence Iteration"] = conv
+    cloud_data.to_csv(os.path.join(out_path, filename), sep=",", index=False)
+    cloud_data_del.to_csv(os.path.join(out_path_del, filename), sep=",", index=False)
+
+def newton_raphson(point, nodes, GH = np.array([[-1.0, 1.0, 1.0, -1.0],[-1.0, -1.0, 1.0, 1.0]]), gh_0 = np.array([[0.0], [0.0]]), res_tol = 0.05**2, n_max = 10):
+    # A newton_raphson method for the inverse mapping from Cartesian coordinates to natural
+    # coordinates of a quadratic element, as used in abaqus
+    # See: "Thermomechanical Modeling of Additive Manufacturing Large Parts", E Denlinger et al., Manufacturing
+    # Science and Engineering, Vol 136, 2014 for details
+
+    # point = a 3-D numpy array with vector of Cartesian coordinates for the point in question
+    # nodes = 4x3 numpy array of nodal coordinates, each row is a node, ordered using the abaqus convention for quads
     # GH = natural coordinates of the nodes 1,2,3,4 following Abaqus convention for a quad
     # Note this was for ([4, 1, 5, 8]) with:
     # HR = np.array([[1.0, -1.0, -1.0, 1.0],[-1.0, -1.0, 1.0, 1.0]])
     # Will need to check if this still works
-    # Could this be a property of the element object?
     # gh_0 = initial guess at natural coordinates for a given point, default at element centroid
     # res_tol = tolerance on the square of the residuals used to assess convergence of the Newton-Raphson
     # n_max = maximum number of iterations of the Newton-Raphson
-    print(GH)
-    print(gh_0)
-    print(res_tol)
-    print(n_max)
+
     gh_n = gh_0 # Set at initial choice for g and h
-    for j in range(n_max):
-        bases = 1.0 + gh_n*GH
-        prod_bases = np.prod(bases, axis = 0)*nodes
-        # need to update below to reflect change to g and h rather than h and r
-        jakdjsakldsajdsklaj
-                    X_i_n = np.sum(prod_bases, axis = 1)/4.0
-                    # calculate residual
-                    # Note that I'm trying to find the root of the residual, = point_proj - X_i_n 
-                    # It has to be this way round to be consistent with the minus sign in calculation of the Jacobean.
-                    # If flipping the residual definition the other way round the this minus sign needs to be removed also
-                    res = point_proj - X_i_n 
-                    # Work out the square of the euclidean norm of the residual
-                    res_L2 = np.sum(res*res)
-                    # If the stopping criterion is met the loop may be terminated
-                    if res_L2 < res_tol:
-                        j = j-1 # subtract one from j to note iteration on which convergence was achieved
-                        break
-            
-                    # Construct the Jacobean of each coordinate wrt h and r
-                    J_n = np.empty([3,2]) # Consider initialising this outside of the loop
-                    for k in range(2):
-                        J_n[:,k] = -np.sum(HR[k,:]*prod_bases/bases[k,:], axis = 1)/4.0
+    J_n = np.empty([3,2]) # Initialise array for storing Jacobean
+    for i in range(n_max):
+        # Perform the forward transformation from natural coordinates to cartesian for the current guess
+        # then calculate the square-residual from the actual point Cartesian coordinates
+        bases = 1.0 + gh_n*GH # 1D interpolation function in each natural coordinate
+        prod_bases = np.prod(bases, axis = 0, keepdims = True)*nodes.T # 2D interpolation function
+        X_i_n = np.sum(prod_bases, axis = 1)/4.0 # Cartesian coordinates for the current guess
+        # calculate residual. Has to be this way round to be consistent with the minus sign in the Jacobean.
+        res = point - X_i_n 
+        res_L2 = np.sum(res*res) # square L2 error
+        # IS stopping criterion met?
+        if res_L2 < res_tol:
+            i = i-1 # subtract one from i to note convergence was achieved at the previous iteration
+            break
+        
+        # Construct the Jacobean of each Cartesian coordinate wrt g and h
+        for j in range(2):
+            # Minus sign consistent with residuals definition
+            J_n[:,j] = -np.sum(GH[j,:]*prod_bases/bases[j,:], axis = 1)/4.0
+        
+        # Find the next guess of g and h using the pseduo-inverse of the non-square Jacobian
+        gh_n = gh_n - linalg.pinv(J_n) @ res.reshape([3,1])
 
-                    # Perform the next step of the Newton-Raphson using the pseduo-inverse
-                    # of the Jacobian, as this is non-square
-                    hr_n = hr_n - linalg.pinv(J_n) @ res.reshape([3,1])
-
-    return(hr_n)
+    return(gh_n, i)
 
 def find_closest_centroid(point, centroids):
     # Find the index df element with closest centroid to point "point",
@@ -316,10 +316,10 @@ def surface_mesh_from_file(file_string = [], node_file = [], el_file = []):
 if __name__ == "__main__":
     folder = "..\\Failure\\Processed DIC Data\\Individual Fields of View\\Alvium Pair 03\\Export_2"
     # folder = "..\\Failure\\Processed DIC Data\\Individual Fields of View\\Manta Camera Pair\\Export_2"
-    Files = FileSeries(folder=folder,in_sub_folder="Processed_Data", out_sub_folder="DIC_nat_coords")
+    Files = FileSeries(folder=folder,in_sub_folder="Data_rotated", out_sub_folder="DIC_nat_coords_2")
     # node_file = '..\\outer_surface_nodes.csv'
     # el_file = '..\\outer_surface_elements.csv'
-    file_string = "..\\outer_surface"
+    file_string = "..\\nominal_shell_mesh_outer_surface"
     coord_labels = ["x_0_rot","y_0_rot","z_0_rot"] # list of labels for DIC coordinate labels
     # mesh = surface_mesh_from_file(node_file=node_file, el_file=el_file)
     Mesh = surface_mesh_from_file(file_string = file_string)
