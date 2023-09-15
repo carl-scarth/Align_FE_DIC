@@ -152,10 +152,14 @@ def get_nat_coords(Files, Mesh, coord_labels = ["x","y","z"]):
          
                     # Move along to the next element in the grid based upon the converged value of the 
                     # natural coordinate gives a clue of which direction in the grid the actual element lies in
+                    # I've corrected this to match 1,2,3,4 now. Be careful though as this will depend on in which
+                    # direction the h and r (g and h) increase with increasing element numbering. I think what I
+                    # have is a reasonable default, but it might be worth having this as an input? Perhaps orientation
+                    # of the grid relative to g and h is also something to think about
                     if hr_n[0,0] < -1:
-                        row_ind = row_ind + 1
-                    elif hr_n[0,0] > 1:
                         row_ind = row_ind - 1
+                    elif hr_n[0,0] > 1:
+                        row_ind = row_ind + 1
                     if hr_n[1,0] < -1:
                         col_ind = col_ind - 1
                     elif hr_n[1,0] > 1:
