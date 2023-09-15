@@ -102,8 +102,9 @@ class File:
                 warnings.warn("Specified number of new_names did not match the selected number of Colummns. Could not rename.")
         # Drop na values if required
         if dropna:
-            self.data.dropna()
-            self.n_points = self.data.shape[0]
+            self.data = self.data.dropna(ignore_index=True)
+            
+        self.n_points = self.data.shape[0]
 
     def insert_columns_with_func(self, func, labels, subscript, rel_pos = 1):
     # Insert new columns in self.data df, to the right of columns with labels in list "labels", with 
