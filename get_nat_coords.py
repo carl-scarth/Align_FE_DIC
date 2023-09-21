@@ -128,6 +128,10 @@ def get_nat_coords(Files, Mesh, coord_labels = ["x","y","z"]):
                 print(i_conv)
                 # replace hr_n with gh below, reflect the change in nomenclature
                 # replace j with i_conv below
+                # BE CAREFUL!! REMEMBER THAT I ADDED THE DROPNA OPTION TO THE EXAMPLE IN EXPORT 2 TO ENABLE KEEPING NAS TO 
+                # HELP WITH INTERPOLATING POINTS ACROSS LOAD STEPS - THIS INVOLVES SOME ADDITION TO THE OUTER LOOP ABOVE
+                # AND WILL REQUIRE PASSING A KEYWORD ARGUMENT
+                # DO ON NEXT ITERATION
                 sadsad
 
                 # Check if the converged natural coordinates are within the element bounds (these
@@ -202,6 +206,7 @@ def get_nat_coords(Files, Mesh, coord_labels = ["x","y","z"]):
     new_cols = {"x_proj": [0,4], "y_proj": [1,9],"z_proj":[2,14]}
     # Add new entries to the cloud_data dataframe
     hr = pd.DataFrame(hr, columns=["h","r"])
+    # Be careful here, if remove na hasn't happened and the row indices don't line up this will add nans!!!
     [cloud_data.insert(loc=value[1], column = key, value = pd.Series(xyz_proj[:,value[0]])) for key, value in new_cols.items()]
     cloud_data = pd.concat([cloud_data, hr],axis=1)
     cloud_data["Element"] = pd.Series(el_ind).astype(int)
@@ -230,6 +235,7 @@ def get_nat_coords(Files, Mesh, coord_labels = ["x","y","z"]):
     # cloud_data = pd.concat([cloud_data, pd.DataFrame(hr, columns=["h", "r"])],axis=1,ignore_index=True)
     #cloud_data["Element"] = el_ind
     #cloud_data["Convergence Iteration"] = conv
+    # WHEN WRITING HERE - HAVE OPTION TO OUTPUT ELEMENT INDICES IN ABAQUS, RATHER THAN PYTHON NOTATION
     cloud_data.to_csv(os.path.join(out_path, filename), sep=",", index=False)
     cloud_data_del.to_csv(os.path.join(out_path_del, filename), sep=",", index=False)
 

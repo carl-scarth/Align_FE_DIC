@@ -1,3 +1,4 @@
+from cgi import test
 from FileSeries import *
 from rename_files import *
 from subtract_displacement import *
@@ -29,7 +30,7 @@ test_data = FileSeries(folder=folder, in_sub_folder=in_sub_folder, out_sub_folde
 test_data.read_data(sep=",")
 # Generally do below, unless there is only one instruction in which case call the other function for renaming
 [remove_suffix(File) for File in test_data.files]
-test_data.extract_qoi(QoI, new_names=new_names)
+test_data.extract_qoi(QoI, new_names=new_names, dropna = False)
 subtract_disp(test_data)
 # Load in a transformation matrix from file
 transmat_file = os.path.join(test_data.parent_path, "image_0000_transformation_matrix.txt")
