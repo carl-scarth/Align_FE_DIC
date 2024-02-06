@@ -78,6 +78,7 @@ class File:
         self.in_filename = filename
         self.out_filename = filename # Default output filename is the same as the input
         self.in_path = in_path
+        self.ext = os.path.splitext(filename)[-1] # Get file extension
         self.out_path = out_path
         self.src = os.path.join(self.in_path, filename)
         self.dst = os.path.join(self.out_path, filename)
@@ -89,12 +90,15 @@ class File:
 
     def read_file(self, **kwargs):
         # Use kwargs to pass options to pandas read_csv function
-        self.data = pd.read_csv(self.src, **kwargs)
+        if self.ext == ".vtk":
+            self.data = vtk_to_pandas(self.src)
+        else:
+            self.data = pd.read_csv(self.src, **kwargs)
         self.n_points = self.data.shape[0]
 
     def filter_data(self, qoi, new_names = [], dropna = True, **kwargs):
         self.data = self.data.filter(items=qoi, **kwargs)
-        # Rename columns if requied
+        # Rename columns if required
         if new_names:
             if len(self.data.columns) == len(new_names):
                 self.data.columns = new_names
