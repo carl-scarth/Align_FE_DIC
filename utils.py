@@ -30,9 +30,9 @@ def vtk_to_pandas(vtk_file_path):
     # Extract point coordinates
     points = vtk_data.GetPoints()
     coordinates = [points.GetPoint(i) for i in range(num_points)]
-    data_dict['X'] = [point[0] for point in coordinates]
-    data_dict['Y'] = [point[1] for point in coordinates]
-    data_dict['Z'] = [point[2] for point in coordinates]
+    data_dict['x'] = [point[0] for point in coordinates]
+    data_dict['y'] = [point[1] for point in coordinates]
+    data_dict['z'] = [point[2] for point in coordinates]
 
     # Extract scalar and vector data
     for i in range(num_arrays):
