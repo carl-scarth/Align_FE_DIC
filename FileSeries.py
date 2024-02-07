@@ -1,6 +1,7 @@
 import os
 import pandas as pd
 import warnings
+from natsort import natsorted
 from utils import *
 
 class FileSeries:
@@ -20,6 +21,15 @@ class FileSeries:
         # Create a list of all files in the in_sub_folder
         self.get_files()
 
+    def down_sam(self, rate, rename_files = False):
+        # Only read data from a subset of files
+        self.files = [file for i, file in enumerate(self.files) if i%rate == 0]
+        # Need to rename the files after?
+        if rename_files:
+            for i, file in enumerate(self.files):
+                file.out_filename = file.out_filename.rstrip("0123456789"+file.ext)+str(i)+".csv"
+                file.update_dst()
+
     def get_paths(self):
         # Get full path to which data is contained
         wd = os.path.abspath("") # Get working directory
@@ -28,8 +38,8 @@ class FileSeries:
         self.out_path = os.path.join(wd,self.folder,self.out_sub_folder)
 
     def get_files(self):
-        # Create a list of SingleFile objects
-        self.files = [File(filename, self.in_path, self.out_path) for filename in os.listdir((self.in_path))]
+        # Create a list of File objects
+        self.files = [File(filename, self.in_path, self.out_path) for filename in natsorted(os.listdir((self.in_path)))]
 
     def read_data(self, **kwargs):
         # Consider adding a progress bar
@@ -81,7 +91,11 @@ class File:
         self.ext = os.path.splitext(filename)[-1] # Get file extension
         self.out_path = out_path
         self.src = os.path.join(self.in_path, filename)
-        self.dst = os.path.join(self.out_path, filename)
+        if self.ext == ".vtk":
+            out_filename = os.path.splitext(filename)[0] + ".csv"
+            self.dst = os.path.join(self.out_path, out_filename)
+        else:
+            self.dst = os.path.join(self.out_path, filename)
         self.data = [] # add data from csv files
 
     def update_dst(self):
