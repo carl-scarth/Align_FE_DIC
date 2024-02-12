@@ -97,7 +97,7 @@ def get_nat_coords(Files, Mesh, coord_labels = ["x","y","z"]):
 
         # Consider moving these into another function once the inner workings of the loop have been tidied
         # Maybe something which performs the outer element search?
-        xyz_proj = np.empty([File.n_points,3]) # xyz coordinate of projected point
+        xyz_proj = np.NaN([File.n_points,3]) # xyz coordinate of projected point
         hr = np.empty([File.n_points,2]) # Array for storing the natural coordinates of each point
         el_ind = [] # list for storing element containing each point
         conv = [] # list containing how many iterations of the Newton-Raphson were required for each point

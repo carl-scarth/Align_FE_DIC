@@ -72,15 +72,18 @@ def transmat_from_file(transmat_file, delimiter=" ", header = False):
     return R, T
 
 if __name__ == "__main__":
-    folder = "..\\Failure\\Processed DIC Data\\Individual Fields of View\\Alvium Pair 03\\Export_2"
+    # folder = "..\\Failure\\Processed DIC Data\\Individual Fields of View\\Alvium Pair 03\\Export_2"
     # folder = "..\\Failure\\Processed DIC Data\\Individual Fields of View\\Manta Camera Pair\\Export_2"
-    Files = FileSeries(folder=folder,in_sub_folder="Data_subtracted_disp", out_sub_folder="Data_rotated_2")
+    folder = "..\\New_Failure_Test"
+    # Files = FileSeries(folder=folder,in_sub_folder="Data_subtracted_disp", out_sub_folder="Data_rotated_2")
+    Files = FileSeries(folder=folder,in_sub_folder="Raw_Data", out_sub_folder="Data_rotated")
     # Define file where transformation matrix is stored
-    transmat_file = os.path.join(Files.parent_path, "image_0000_transformation_matrix.txt")
+    transmat_file = os.path.join(folder, "new_test_rot_mat.txt")
     # Read in transformation matrix
     R, T = transmat_from_file(transmat_file)
-    labels = [["x", "y", "z"],["x_0","y_0","z_0"],["u","v","w"]]
-    is_displacement = [False, False, True]
+    # labels = [["x", "y", "z"],["x_0","y_0","z_0"],["u","v","w"]]
+    labels = [["X", "Y", "Z"],["u","v","w"],["cu","cv","cw"]]
+    is_displacement = [False, True, True]
     Files.read_data()
     transform_coords(Files, labels, is_displacement = is_displacement, R=R, T=T)
     Files.dump()

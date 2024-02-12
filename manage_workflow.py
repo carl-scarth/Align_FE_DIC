@@ -1,4 +1,3 @@
-from cgi import test
 from FileSeries import *
 from rename_files import *
 from subtract_displacement import *

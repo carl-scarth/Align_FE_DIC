@@ -14,6 +14,7 @@ def subtract_columns(data, column_labels = [["x", "u"],["y", "v"],["z","w"]]):
     # for labels in column_labels:
     for i, labels in enumerate(column_labels):
         new_cols[:,i] = (data[labels[0]] - data[labels[1]]).to_numpy()
+
     return(new_cols)
 
 if __name__ == "__main__":
