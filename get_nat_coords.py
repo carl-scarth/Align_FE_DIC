@@ -61,10 +61,6 @@ def get_nat_coords(Files, Mesh, coord_labels = ["x","y","z"], dropna = False, ou
                 # Continue to update function
                 (gh_i, i_conv) = newton_raphson(point_proj, Mesh.elements[min_el].nodes)
                 
-                # BE CAREFUL!! REMEMBER THAT I ADDED THE DROPNA OPTION TO THE EXAMPLE IN EXPORT 2 TO ENABLE KEEPING NAS TO 
-                # HELP WITH INTERPOLATING POINTS ACROSS LOAD STEPS - THIS INVOLVES SOME ADDITION TO THE OUTER LOOP ABOVE
-                # AND WILL REQUIRE PASSING A KEYWORD ARGUMENT
-                # DO ON NEXT ITERATION
                 # Check if the converged natural coordinates are within the element bounds (these
                 # should be +/-1.) If not, then another element is selected, and another iteration
                 # of the outer while loop is performed
@@ -209,7 +205,7 @@ def update_grid_convergence(gh, gh_prev, row_ind, col_ind, Mesh):
         gh = np.array([[np.nan], [np.nan]]) # Update natural coordinates
         converged = True
         print("out of bounds")
-        
+
     elif np.any(((gh < -1) & (gh_prev > 1)) | ((gh > 1) & (gh_prev < -1))):
         # Check for flips from hr_n > 1 to  hr_n < -1 or vice-versa, indicating the point
         # is between the projection of the element faces onto the plane of the point, 
