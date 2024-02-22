@@ -209,7 +209,7 @@ def update_grid_convergence(gh, gh_prev, row_ind, col_ind, Mesh):
         gh = np.array([[np.nan], [np.nan]]) # Update natural coordinates
         converged = True
         print("out of bounds")
-        sadsad
+        
     elif np.any(((gh < -1) & (gh_prev > 1)) | ((gh > 1) & (gh_prev < -1))):
         # Check for flips from hr_n > 1 to  hr_n < -1 or vice-versa, indicating the point
         # is between the projection of the element faces onto the plane of the point, 
