@@ -29,6 +29,10 @@ class FileSeries:
             for i, file in enumerate(self.files):
                 file.out_filename = file.out_filename.rstrip("0123456789"+file.ext)+str(i)+".csv"
                 file.update_dst()
+    
+    def trunctate_data(self, start = 0, end = -1):
+        # Trim the data to a specific range
+        self.files = [self.files[i] for i in range(start,end)]
 
     def get_paths(self):
         # Get full path to which data is contained
