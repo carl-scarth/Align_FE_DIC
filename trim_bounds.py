@@ -114,7 +114,7 @@ def get_log_index(data, in_string):
 
     return(out_ind)
 
-def trim_bounds(Files, dropna = False, out_path_del = []):    
+def trim_bounds(Files, bound_list, dropna = False, out_path_del = []):    
     # Main function for trimmming data
     # Use a different function depending on if nas are to be retained
     if dropna:
@@ -125,7 +125,9 @@ def trim_bounds(Files, dropna = False, out_path_del = []):
     for file in Files.files:
         for bound in bound_list:
             file.data, data_del = filter_func(file.data, get_log_index(file.data, bound))
+
         # Write output to csvs
+        print("writing " + file.dst)
         file.data.to_csv(file.dst, sep=",", index=True)
         # Need to implement capability to store deleted data
         #if dropna and out_path_del:
@@ -136,7 +138,7 @@ def trim_bounds(Files, dropna = False, out_path_del = []):
 
 if __name__ == "__main__":
     folder = "..\\CS02P\\DIC\\Left_Camera_Pair"
-    Files = FileSeries(folder=folder,in_sub_folder="Nat_Coords", out_sub_folder="Trimmed_Rad")
+    Files = FileSeries(folder=folder,in_sub_folder="Working_Folder", out_sub_folder="Trimmed_Rad")
     Files.read_data()
     out_path_del = os.path.join(folder, "Rad_trimmed_del")
     # coord_labels = ["x_proj","y_proj","z_proj"]
@@ -146,4 +148,3 @@ if __name__ == "__main__":
                   "z_proj > 235.0 & z_proj <= 360.0 & y_proj < z_proj / -20.0 + 23.0"]
                   
     trim_bounds(Files, bound_list, out_path_del=out_path_del)
-    # (data["y_proj"] > 145.0 - (data["z_proj"] - 60.0)/20.0),)
