@@ -1,6 +1,7 @@
 # Useful functions called by multiple elements
 import os
 import vtk
+import json
 import pandas as pd
 
 def make_out_folder(folder_paths):
@@ -61,3 +62,12 @@ def vtk_to_pandas(vtk_file_path):
     df = pd.DataFrame(data_dict)
 
     return df
+
+def model_force_from_json(in_json):
+    # Extract forces applied in a finite element model from a json containing output data
+    with open(in_json, "r") as f:
+        # Load in string from file
+        model_dict = json.loads(f.readline())
+
+    model_force = [frame["RFs"][2] for frame in model_dict["Sample"][0]["Frame"]]
+    return(model_force)
