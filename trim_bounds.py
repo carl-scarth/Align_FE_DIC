@@ -138,6 +138,9 @@ def trim_bounds(Files, bound_list, dropna = False, out_path_del = []):
 
 if __name__ == "__main__":
     folder = "..\\CS02P\\DIC\\Left_Camera_Pair"
+    # IMPORTANT ISSUE: MIGHT NOT BE A PROBLEM WITH THIS CODE, PROBABLY MORE AN ISSUE WITH FILESERIES
+    # BUT WHEN I RUN THIS AND INTEGERS ARE READ IN FROM CSVS THEY ARE INTERPRETED AS FLOATS
+    # SORT IT OUT
     Files = FileSeries(folder=folder,in_sub_folder="Working_Folder", out_sub_folder="Trimmed_Rad")
     Files.read_data()
     out_path_del = os.path.join(folder, "Rad_trimmed_del")
