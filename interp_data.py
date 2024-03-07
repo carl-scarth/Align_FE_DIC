@@ -1,119 +1,106 @@
 import os
 import pandas as pd
 import numpy as np
-import json
+from FileSeries import *
+from utils import model_force_from_json
+from downsample_data import * # Won't need this in long run, put in manage workflow
 
 # Interpolate data to specified applied load values
 # In future consider adding other methods, e.g. moving average?
-def downsample_data(data, sort = False, sort_col = ["Element"], method = "uniform", rate = 2):
-    # Downsample the data to reduce sample size
-    n_data = data.shape[0]
-    # Sort into order of ascending element number such that points in close proximity are grouped
-    if sort:
-        data.sort_values(sort_col,inplace=True)
-    if method == "uniform":
-        data = data.iloc[range(0,n_data,rate)]
-    elif method == "random":
-        data = data.sample(frac = 1.0/rate)
-    return(data)
+def interp_data(Files, model_force, interp_by_col = "Load", downsam = False, downsam_rate = 1, dropna = True, output_all = True, output_frames = True):
+    # Extract forces from each image
+    force_data = [-file.data[interp_by_col][0] for file in Files.files]
 
-wd = os.getcwd()
-folder = "..\\..\\..\\..\\Load Displacement Curve"
-file = "Image.csv"
-image_folder = "Data_rad_trimmed\\"
-down_sam = True # Downsample to thin data?
-downsam_rate = 8
-
-data = pd.read_csv(os.path.join(wd,folder,file), sep=";")
-data = data.filter(items = ["File", " Force [kV]", " Displacement [mm]"])
-data.columns = ["Image", "Force", "Displacement"]
-images = ["Image_" + file.partition("Image_")[2].replace("_0.tiff",".csv") for file in data["Image"]]
-data["Image"] = pd.Series(images)
-data["Compressive_Force"] = -data["Force"]
-# Not sure, how to play this what with Geir subtracting the first displacement component. Consider cheating by
-# subtracting the first force to get zero - this is cheating but maybe ok...
-data["Zeroed_Force"] = data["Compressive_Force"] - data["Compressive_Force"][0]
-# Could try both
-
-data.to_csv("Force-Displacement.csv", sep=",",index=False)
-
-# Manually truncate the data to before failure occurs
-data = data.filter(items = range(181), axis = 0)
-
-# Interpolate DIC to fixed load increments to match model output
-# model_output_location = "C:\\Users\\cs2361\\Documents\\CSpar_Calibration\\inputs\\LHSDesign40x4_output_struct.json"
-model_output_location = "C:\\Users\\cs2361\\Documents\\CSpar_Calibration\\inputs\\LHSDesign70x7_downsam_2.json"
-with open(model_output_location, "r") as f:
-    # Load in string from file
-    model_dict = json.loads(f.readline())
-
-model_load = [frame["RFs"][2] for frame in model_dict["Sample"][0]["Frame"]]
-
-# Consider keeping filenames the same for automation, rather than stripping the word "Image" out
-before_ind = []
-after_ind = []
-# Only extract DIC for the third last frame
-# model_load = [model_load[-3]]
-#print(model_load)
-for load_inc in model_load:
-    # We want to extract the image either side of the current load increment then interpolate between the 2, if possible
-    if not data[data["Compressive_Force"]<load_inc].empty: 
-#        print(data[data["Compressive_Force"]<load_inc].index[-1])
-        before_ind.append(data[data["Compressive_Force"]<load_inc].index[-1])
-        # print(data[data["Compressive_Force"]<load_inc].iloc[-1]["Compressive_Force"])
-    else:
-        before_ind.append(0)
-        #print("First entry")
-
-    after_ind.append(data[data["Compressive_Force"]>=load_inc].index[0])
-    # print(data[data["Compressive_Force"]>=load_inc].iloc[0]["Compressive_Force"])
+    # Loop over each requested applied force and find the image with force either side of this value
+    before_ind = []
+    after_ind = []
+    for force_inc in model_force:
+        # Check if there is experimental data lower than the reqested applied force
+        if any([force < force_inc for force in force_data]):
+            # Append the last entry for which the force is lower than the requested value
+            before_ind.append([i for i, force in enumerate(force_data) if force < force_inc][-1])
+        else:
+            # Otherwise just use the first datapoint
+            # before_ind.append(0)
+            # before_ind.append([])
+            # before_ind.append(np.NaN)
+            before_ind.append(-1) # replace later with nas, but after converting to integer
+            # Consider allowing for empty value
         
-interp_data = pd.DataFrame({"Model_Force" : model_load})
-interp_data["Before_Force"] = data["Compressive_Force"].filter(items = before_ind, axis = 0).values
-interp_data["After_Force"] = data["Compressive_Force"].filter(items = after_ind, axis = 0).values
-interp_data["Before_Image"] = data["Image"].filter(items = before_ind, axis = 0).values
-interp_data["After_Image"] = data["Image"].filter(items = after_ind, axis = 0).values
-interp_data["Ratio"] = (interp_data["Model_Force"] - interp_data["Before_Force"])/(interp_data["After_Force"] - interp_data["Before_Force"])
-# If there is no before then this will give an infinite value, as denominator is zero
-# Just replace with 1 to use the after image
-interp_data.replace([np.inf, -np.inf], 1.0, inplace = True)
+        # Append the first entry for which the experimental force is higher than the requested value to the list of "after" indices
+        after_ind.append([i for i, force in enumerate(force_data) if force >= force_inc][0])
+    
+    interp_frame = pd.DataFrame({"Model_Force" : model_force})
+    interp_frame["Before_Force"] = pd.Series([force_data[ind] if ind != -1 else pd.NA for ind in before_ind])
+    interp_frame["After_Force"] = pd.Series([force_data[ind] for ind in after_ind])
+    interp_frame["Before_Image"] = pd.Series(before_ind,dtype=int)
+    interp_frame["Before_Image"].replace(-1, pd.NA, inplace=True)
+    interp_frame["After_Image"] = pd.Series(after_ind,dtype=int)
+    interp_frame["Ratio"] = (interp_frame["Model_Force"] - interp_frame["Before_Force"])/(interp_frame["After_Force"] - interp_frame["Before_Force"])
+    # If there is no before then this will give an infinite value, as denominator is zero
+    # Just replace with 1 to use the after image
+    interp_frame.replace([np.inf, -np.inf], 1.0, inplace = True)
+    # Identify the data corresponding to the image before and after each force, and linearly
+    # interpolate. For this to work the index of the data should be retained throughout the processing
+    # otherwise it will be impossible to track points from one image to the next across load steps
+    for i, row in enumerate(interp_frame.itertuples()):
+        # Possibility of using index from dataframe rather than enumerate (provided this works, which it may not)
+        # before_DIC = pd.read_csv(os.path.join(image_folder,row["Before_Image"]))
+        # if not np.isnan(row.Before_Image):
+        if not pd.isna(row.Before_Image):
+            before_DIC = Files.files[row.Before_Image].data
+            after_DIC = Files.files[row.After_Image].data
+            # after_DIC = pd.read_csv(os.path.join(image_folder,row["After_Image"]))
+            if before_DIC.shape[0] != after_DIC.shape[0]:
+                raise Exception("Different number of datapoints across images, cannot interpolate")
 
-print(interp_data)
+            # Interpolate between the two data points
+            intp_DIC = (after_DIC - before_DIC)*row.Ratio + before_DIC
+            # Don't interpolate integers
+            # Ideally I'd detect integers automatically, but a previous bit of code has 
+            # written these to csv as float. Hopefully I'll fix this in another iteration,
+            # at which point I can update the code. For now do it manually.
+            # print(before_DIC.dtypes)
+            # print(before_DIC.dtypes != "float64")
+            #intp_DIC[before_DIC.dtpyes != "float64"] = before_DIC[before_DIC.dtpyes != "float64"]
+            intp_DIC[["Element","Conv_Iteration"]] = before_DIC[["Element","Conv_Iteration"]]
+            intp_DIC["Increment"] = i + 1
+            intp_DIC["Compressive Force"] = row.Model_Force
+            if downsam:
+                print("this shouldn't run")
+                intp_DIC = downsample_data(intp_DIC, sort = True, sort_col = sort_col, method = "uniform", rate = downsam_rate)
+            # Later this will be incorporated into the FileSeries object, but would need separate entry for
+            # interpolated data. Keep here for now
+            if dropna:
+                intp_DIC = intp_DIC.dropna()
+            # Output individual frames if required
+            if output_frames:
+                intp_DIC.to_csv(os.path.join(Files.files[0].out_path, "Image_Inc_" + str(i) + ".csv"),sep=",",index=True)
+            # If required append to dataframe containing all interpolated output
+            if output_all:
+                try:
+                    all_frames_DIC = pd.concat((all_frames_DIC,intp_DIC.dropna()),axis=0)
+                except:
+                    all_frames_DIC = pd.DataFrame(columns=intp_DIC.columns.values)
+                    all_frames_DIC = pd.concat((all_frames_DIC,intp_DIC.dropna()),axis=0)
 
-# out_folder = "Interpolated_Data"
-out_folder = "adasd"
-if out_folder not in os.listdir(os.getcwd()):
-    os.mkdir(out_folder)
+    if output_all:
+        # Write to csv
+        all_frames_DIC.to_csv(os.path.join(Files.in_path, "Interpolated_DIC.csv"), sep=",", index=True)
 
-# For this to work, I need to have retained the index of the data throughout the processing
-# Otherwise I won't be able to track points across load steps
-for i,row in interp_data.iterrows():
-    print(i)
-    before_DIC = pd.read_csv(os.path.join(image_folder,row["Before_Image"]))
-    after_DIC = pd.read_csv(os.path.join(image_folder,row["After_Image"]))
-    if before_DIC.shape[0] != after_DIC.shape[0]:
-        print(i)
-        print(before_DIC)
-        print(after_DIC)
-        asdsad
-
-    # Interpolate between the two data points
-    intp_DIC = (after_DIC - before_DIC)*row["Ratio"] + before_DIC
-    # Don't interpolate integers...
-    intp_DIC[["Element","Conv_Iteration"]] = before_DIC[["Element","Conv_Iteration"]]
-    intp_DIC["Increment"] = i + 1
-    intp_DIC["Compressive Force"] = row["Model_Force"]
-    # Downsample the data if necessary
-    if down_sam:
-        sort_col = ["Element","h"]
-        intp_DIC = downsample_data(intp_DIC, sort = True, sort_col = sort_col, method = "uniform", rate = downsam_rate)
-
-    intp_DIC.dropna().to_csv(os.path.join(out_folder, "Image_Inc_" + str(i) + ".csv"),sep=",",index=True)
-    if i == 0:
-        all_frames_DIC = pd.DataFrame(columns=intp_DIC.columns.values)
-
-    all_frames_DIC = pd.concat((all_frames_DIC,intp_DIC.dropna()),axis=0)
-
-print(all_frames_DIC)
-# Write to csv
-all_frames_DIC.to_csv("Interpolated_DIC.csv", sep=",", index=True)
+if __name__ == "__main__":
+    folder = "..\\CS02P\\DIC\\Left_Camera_Pair"
+    Files = FileSeries(folder=folder,in_sub_folder="Trimmed_Rad", out_sub_folder="Interpolated_Data")
+    Files.read_data()
+    # truncate the data to before failure occurs
+    Files.trunctate_data(end = 336)
+    interp_by_col = "Load"
+    model_force = [15*i for i in range(15)]
+    # alternative code where force is extracted from the model output data
+    model_out_json = "C:\\Users\\cs2361\\Documents\\CSpar_Calibration\\inputs\\LHSDesign50x3_2_output_struct_210kN.json"
+    model_force = model_force_from_json(model_out_json)
+    downsam = False
+    downsam_rate = 8
+    print(model_force)
+    interp_data(Files, model_force, interp_by_col = "Load", downsam = downsam)
+    sort_col = ["Element","h"]
