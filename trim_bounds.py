@@ -1,5 +1,7 @@
-# Gets rid of untrustworthy DIC points outside of the filed of view (around the right corner) based upon 
-# Projected coordinates from  get_nat_coords_grid.py
+# Trims the data to remove a set of points from outside the region of interest
+# Trims based upon a set of logical condions past via a list of strings. Within
+# each string indices, operators and numerical values must be separated by a 
+# single space
 
 import pandas as pd
 import numpy as np
@@ -129,6 +131,7 @@ def trim_bounds(Files, bound_list, dropna = False, out_path_del = []):
         # Write output to csvs
         print("writing " + file.dst)
         file.data.to_csv(file.dst, sep=",", index=True)
+
         # Need to implement capability to store deleted data
         #if dropna and out_path_del:
             #if out_path_del not in os.listdir():
@@ -137,17 +140,24 @@ def trim_bounds(Files, bound_list, dropna = False, out_path_del = []):
             #data_del.to_csv(out_path_del, sep=",", index=False)
 
 if __name__ == "__main__":
-    folder = "..\\CS02P\\DIC\\Left_Camera_Pair"
-    # IMPORTANT ISSUE: MIGHT NOT BE A PROBLEM WITH THIS CODE, PROBABLY MORE AN ISSUE WITH FILESERIES
-    # BUT WHEN I RUN THIS AND INTEGERS ARE READ IN FROM CSVS THEY ARE INTERPRETED AS FLOATS
-    # SORT IT OUT
-    Files = FileSeries(folder=folder,in_sub_folder="Working_Folder", out_sub_folder="Trimmed_Rad")
+    # Select subset of data within specified bounds
+
+    # Create FileSeries object and read in data
+    # folder = "E:\\MengYi_Data\\CS02P_DIC\\Right Camera Pair"
+    folder = "E:\\MengYi_Data\\CS02P_DIC\\Left Camera Pair"
+    Files = FileSeries(folder=folder,in_sub_folder="Transformed_Data", out_sub_folder="Trimmed_Data")
     Files.read_data()
-    out_path_del = os.path.join(folder, "Rad_trimmed_del")
+
+    #out_path_del = os.path.join(folder, "Rad_trimmed_del")
+
+    # Set of instructions for my application - ignore
     # coord_labels = ["x_proj","y_proj","z_proj"]
-    bound_list = ["y_proj < 5.0", # points in the obscured radius of the ends
-                  "z_proj >= 185.0 & z_proj <= 235.0 & y_proj < 11.25", # Points in the obscured radius in the central region
-                  "z_proj >= 60.0 & z_proj < 185.0 & y_proj < z_proj / 20.0 + 2.0",
-                  "z_proj > 235.0 & z_proj <= 360.0 & y_proj < z_proj / -20.0 + 23.0"]
-                  
-    trim_bounds(Files, bound_list, out_path_del=out_path_del)
+    #bound_list = ["y_proj < 5.0", # points in the obscured radius of the ends
+    #              "z_proj >= 185.0 & z_proj <= 235.0 & y_proj < 11.25", # Points in the obscured radius in the central region
+    #              "z_proj >= 60.0 & z_proj < 185.0 & y_proj < z_proj / 20.0 + 2.0",
+    #              "z_proj > 235.0 & z_proj <= 360.0 & y_proj < z_proj / -20.0 + 23.0"]
+    # bound_list = ["z_rot <= 360.0"]
+
+    # Trim all points between z_rot = 64 and z_rot = 356
+    bound_list = ["z_rot > 64.0 & z_rot < 356.0"]
+    trim_bounds(Files, bound_list, dropna=True)

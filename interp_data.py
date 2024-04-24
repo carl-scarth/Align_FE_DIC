@@ -97,8 +97,9 @@ if __name__ == "__main__":
     interp_by_col = "Load"
     model_force = [15*i for i in range(15)]
     # alternative code where force is extracted from the model output data
-    model_out_json = "C:\\Users\\cs2361\\Documents\\CSpar_Calibration\\inputs\\LHSDesign50x3_2_output_struct_210kN.json"
+    model_out_json = "C:\\Users\\cs2361\\Documents\\CSpar_Calibration\\inputs\\LHSDesign50x5_output_struct_200kN.json"
     model_force = model_force_from_json(model_out_json)
+    print(model_force)
     downsam = False
     downsam_rate = 8
     print(model_force)
