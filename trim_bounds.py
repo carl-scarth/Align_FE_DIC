@@ -143,8 +143,8 @@ if __name__ == "__main__":
     # Select subset of data within specified bounds
 
     # Create FileSeries object and read in data
-    # folder = "E:\\MengYi_Data\\CS02P_DIC\\Right Camera Pair"
-    folder = "E:\\MengYi_Data\\CS02P_DIC\\Left Camera Pair"
+    folder = "E:\\MengYi_Data\\CS02P_DIC\\Right Camera Pair"
+    #folder = "E:\\MengYi_Data\\CS02P_DIC\\Left Camera Pair"
     Files = FileSeries(folder=folder,in_sub_folder="Transformed_Data", out_sub_folder="Trimmed_Data")
     Files.read_data()
 
