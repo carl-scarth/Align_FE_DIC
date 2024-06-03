@@ -3,11 +3,22 @@ import numpy as np
 
 class SurfaceMesh:
     # Contains properties of a finite element surface mesh comprised of quad elements
-    def __init__(self, nodes, connectivity, convert_conn = True):
+    def __init__(self, nodes = [], connectivity = [], convert_conn = True, from_file = False, file_string = [], node_file = [], el_file = []):
         # nodes = numpy array containing node coordinates
         # connectivity = numpy array containing element connectivity information
+        
+        # Determine if correct information has been provided to initialise mesh object
+        if from_file:
+            if not (file_string or (node_file and el_file)):
+                raise Exception("You specifed \"from_file = True\", please input names for node_file and el_file, or file_string used to indentify both")
+        else:
+            if not (nodes and connectivity):
+                raise Exception("You specified \"from_file = False\", please input nodes and connectivity matrices")
+        
+        if from_file:
+            nodes, connectivity = get_mesh_from_file(file_string, node_file, el_file)
+
         self.nodes = nodes
-        self.elements = []
         # Define a QuadElement object for every entry of connectivity
         self.elements = [QuadElement(i, conn_i, convert_conn=convert_conn) for i, conn_i in enumerate(connectivity)]
         
@@ -15,6 +26,10 @@ class SurfaceMesh:
         self.n_el = len(self.elements)
         self.n_nodes = self.nodes.shape[0]
         self.is_grid = False # is the mesh a structured grid of elements
+
+        # Calculate the element normals and centroids
+        self.get_normals()
+        self.get_centroids()
 
     def define_struct_grid(self, n_x, n_y):
         # Specify the mesh arranaged as a structured  grid, with n_x elements in the x direction and
@@ -72,3 +87,25 @@ class QuadElement:
         if not hasattr(self,"nodes"):
             self.get_nodes(nodes_mesh)
         self.centroid = np.sum(self.nodes, axis=0)/4.0
+
+
+def get_mesh_from_file(file_string = [], node_file = [], el_file = []):
+    # Load in elements and nodes from a finite element model of the outer surface of the structure
+    # over which the DIC data lies
+    # file_string = string used to identify both the location of the nodes and elements, appended by file_string_nodes.csv and file_string_elements.csv
+    # node_file = name of the file where the nodes are stored, if the labelling differs from the element file
+    # el_file = name of the file where elements are stored, if the labelling differs from the element file
+    
+    # Has the location of the input files been provided correctly?
+    if not file_string and not (node_file and el_file):
+        raise Exception("Please provide either \"file_string\" with label for both element and node files, or both separate \"node_file\" and \"el_file\"")
+    
+    if file_string:
+        node_file = file_string + "_nodes.csv"
+        el_file = file_string + "_elements.csv"
+
+    # Read element connectivities
+    connectivity = np.loadtxt(el_file, dtype = int, delimiter = ',', skiprows = 1)
+    # read nodal coordinates
+    nodes = np.loadtxt(node_file, delimiter = ',', skiprows = 1)
+    return(nodes, connectivity)

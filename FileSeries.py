@@ -62,7 +62,7 @@ class FileSeries:
             print(i)
             File.filter_data(qoi, new_names, dropna, **kwargs)
 
-    def apply_func_to_data(self, func, labels, subscript, rel_pos = 1, message = []):
+    def apply_func_to_data(self, func, labels = [], in_sub = [], out_sub = "", rel_pos = 1, out_cols = [], message = [],  insert_by_label = True):
         # Applies a function to every dataframe, and inserts new columns with the results. 
         # Primarily used for coordinate transformations
         # func = function which is applied to the data given as lambda function
@@ -74,8 +74,12 @@ class FileSeries:
             print(message)
         for i, File in enumerate(self.files):
             print(i)
-            File.insert_columns_with_func(func, labels, subscript, rel_pos)
-
+            if insert_by_label:
+                if not labels:
+                    raise Exception("To specify new column position relative to label, please input list of labels")
+                File.insert_col_with_func_by_label(func, labels, in_sub = in_sub, out_sub = out_sub, rel_pos = rel_pos)
+            else:
+                File.insert_col_with_func_by_loc(func, out_cols=out_cols)
         # Possibly add option to just replace the column if specified by Boolean
 
     def dump(self, **kwargs):
@@ -128,23 +132,43 @@ class File:
             
         self.n_points = self.data.shape[0]
 
-    def insert_columns_with_func(self, func, labels, subscript, rel_pos = 1):
-    # Insert new columns in self.data df, to the right of columns with labels in list "labels", with 
-    # name appended by "_subscript", and values given by applying function "func" to the original columns
-    # optional input rel_pos gives the relative position of the new column compared to the original
-        if all([label in self.data.columns for label in labels]):
+    def insert_col_with_func_by_label(self, func, labels, in_sub = [], out_sub = "", rel_pos = 1):
+        # Insert output to the right of input columns with labels in list "labels" + _"in_sub", with 
+        # name appended by "_out_sub", and values given by applying function "func" to the original columns
+        # optional input rel_pos gives the relative position of the new column compared to the original
+        # Only works if function output has same number of columns as input
+        if in_sub:
+            in_labels = ["_".join((label, in_sub)) for label in labels]
+        else:
+            in_labels = labels
+        out_labels = ["_".join((label, out_sub)) for label in labels]
+        if all([label in self.data.columns for label in in_labels]):
             # Perform transformation using function
             values = func(self.data)
-            if values.shape[1] != len(labels):
+            if values.shape[1] != len(in_labels):
                 raise Exception("The number of columns outputted by the function do not match the specified number of labels")
             
             # Insert transformed data into the dataframe
-            for i, label in enumerate(labels):
-                in_loc = self.data.columns.get_loc(label)
-
-                self.data.insert(loc=(in_loc+rel_pos), column=(label+"_"+subscript), value = values[:,i])
+            for i, (in_label, out_label) in enumerate(zip(in_labels, out_labels)):
+                in_loc = self.data.columns.get_loc(in_label)
+                self.data.insert(loc=(in_loc+rel_pos), column=out_label, value = values[:,i])
         else:
             raise Exception("The specified columns could not be found in the data")
+        
+    def insert_col_with_func_by_loc(self, func, out_cols = []):
+        # Run function
+        values = func(self.data)
+        if len(out_cols) < values.shape[1]:
+            # If insufficient output column indices are specified then place at end of Dataframe
+            out_cols.extend([-1 for i in range(values.shape[1]-len(out_cols))])
+        elif len(out_cols) > values.shape[1]:
+            warnings.warn("More output column locations specified than are outputted by the function, the last {} values are ignored".format(len(out_cols)-values.shape[1]))
+        for loc, column in zip(out_cols, values):
+            if loc == -1:
+                # If needed at end can just create new column rather than using insert
+                self.data[column] = values[column]
+            else:
+                self.data.insert(loc=loc, column=column, value = values[column])
 
     def write_data(self, sep = ",", index = False, **kwargs):
         # Use kwargs to pass writing options to pandas
