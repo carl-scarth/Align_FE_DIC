@@ -39,78 +39,46 @@ def nat_coord_search(cloud_data, Mesh, coord_labels, in_sub = [], proj_sub = "pr
     xyz_proj.fill(np.nan)
     gh = np.empty([cloud_xyz.shape[0],2]) # Array for storing the natural coordinates of each point
     el_ind = [] # list for storing element containing each point
-    conv = [] # list containing how many iterations of the Newton-Raphson were required for each point
+    n_iter = 5 # Maximum number of iterations stopping criterion for search
     
-    # Consider moving these into another function once the inner workings of the loop have been tidied
-    # Maybe something which performs the outer element search?
+    # Loop over all points and perform the natural coordinate search for each point
     for i, point in enumerate(cloud_xyz):
         # Find element with the closest centroid to the point, to use as an intial guess for the element
         min_el = find_closest_centroid(point, Mesh.centroids)
-        # A for loop with a break might be more sensible... Implement on another iterations
-
-        # Search to determine if the point is found to lie in the chosen element. If  correct element has been 
-        # chosen the natural coordinates will lie between +/-1.0, if not the converged values of these coordinatess
-        # indicate a direction to move in the grid until the correct element is found, or it is determined that the 
-        # point does not lie over the mesh surface
-        el_found = False # Boolean to check whether the element the point belongs to has been found
-        gh_prev = np.array([[np.nan], [np.nan]]) # for storing previous converged value of hr when searching
-        # If implementing as a for with conditional, rather than while, do this on the first iteration 
-        # for an out-of-bounds element to save doing this for every point...
-        while not el_found:                
+        # el_found = False # Boolean to check whether the element the point belongs to has been found
+        for j in range(n_iter):
             # Project point onto the surface of the current element, and store result
             point_proj = proj_point_on_element(point, Mesh.elements[min_el].centroid, Mesh.elements[min_el].n)
             xyz_proj[i,:] = point_proj
             # Determine natural coordinates for the  point using Newton-Raphson
-            # Continue to update function
-            (gh_i, i_conv) = newton_raphson(point_proj, Mesh.elements[min_el].nodes)
+            gh_i, *_ = newton_raphson(point_proj, Mesh.elements[min_el].nodes)
+            print(gh_i)
+            dsadsdsdas  
                     
-            # Check if the converged natural coordinates are within the element bounds (these
-            # should be +/-1.) If not, then another element is selected, and another iteration
-            # of the outer while loop is performed
+            # Check if the converged natural coordinates are within the element bounds (
+            # should be +/-1.) If not, move to the next element in the search.
             if np.all((gh_i >= -1) & (gh_i <= 1)):
-                # Condition for exiting the while loop
-                el_found = True
+                # Exit the loop
+                # el_found = True
+                break
             elif Mesh.is_grid:
-                # Job to do on next tidy: replace the while loop with a for loop with a break.
-                # Maybe set loop limit to 5??
-                # There isn't a built in function which will redo the for loop iteration if necessary. 
-                #  It might be tidier to do this using a while loop at the outer level, rather than a for, and
-                #  controlling the incrementation. A break statement inside a conditional will prevent moving to the next iteration. Consider playing with this 
-                # and see which is neater. See:
-                # https://stackoverflow.com/questions/492860/python-restarting-a-loop
-                # https://stackoverflow.com/questions/36573486/redo-for-loop-iteration-in-python
-                # Determine position of current element in the grid to find the next element
-                # Could add below to grid code?
-                row_ind, col_ind = get_grid_inds(min_el,Mesh.n_x)
+                # Use the grid search method if mesh is a structured grid
+                if j == 0:
+                    gh_prev = np.array([[np.nan], [np.nan]]) # for storing previous converged value of gh
 
-                # Move along to the next element in the grid based upon the converged value of the 
-                # natural coordinate gives a clue of which direction in the grid the actual element lies in
-                # I've corrected this to match 1,2,3,4 now. Be careful though as this will depend on in which
-                # direction the h and r (g and h) increase with increasing element numbering. I think what I
-                # have is a reasonable default, but it might be worth having this as an input? Perhaps orientation
-                # of the grid relative to g and h is also something to think about
-                if gh_i[0,0] < -1:
-                    row_ind = row_ind - 1
-                elif gh_i[0,0] > 1:
-                    row_ind = row_ind + 1
-                if gh_i[1,0] < -1:
-                    col_ind = col_ind - 1
-                elif gh_i[1,0] > 1:
-                    col_ind = col_ind + 1
-                
-                # Check if search has converged, and update natural coordinates accordingly
-                gh_i, el_found = update_grid_convergence(gh_i, gh_prev, row_ind, col_ind, Mesh)
-                if not el_found:
-                    # If neither, move to the next element in the grid
-                    min_el = row_ind*Mesh.n_x + col_ind
-                    gh_prev = gh_i # Store the previous natural coordinate values to track the element search
+                # Find the next element to consider in the search, and check if stopping criteria are met
+                gh_i, stop = update_grid_search(gh_i, gh_prev, min_el, Mesh)
+                # Break out of loop if stopping criteria met
+                if stop:
+                    sdfdsfds
+                    break
             else:
                 warnings.warn("Search not yet implemented for irregular mesh, some results may be inaccurate")
-                el_found = True # break out of loop
+                #el_found = True # break out of loop
+                break
             
         # Store the index of the element in which the current point sits
         el_ind.append(min_el)
-        conv.append(i_conv)
         gh[i,:] = gh_i.squeeze()
     
     # Put output in correct format
@@ -119,7 +87,6 @@ def nat_coord_search(cloud_data, Mesh, coord_labels, in_sub = [], proj_sub = "pr
     gh = pd.DataFrame(gh, columns=["g","h"])
     out_frame = pd.concat([out_frame, gh], axis=1)
     out_frame["Element"] = pd.Series(el_ind).astype(int)
-    out_frame["Conv_Iteration"] = pd.Series(conv).astype(int)
     return(out_frame)
 
 def newton_raphson(point, nodes, GH = np.array([[-1.0, 1.0, 1.0, -1.0],[-1.0, -1.0, 1.0, 1.0]]), gh_0 = np.array([[0.0], [0.0]]), res_tol = 0.05**2, n_max = 10):
@@ -171,59 +138,81 @@ def get_grid_inds(el, n_x):
     col_ind = el%n_x # Remainder after the above integer division gives the column index
     return(row_ind, col_ind)
 
-def update_grid_convergence(gh, gh_prev, row_ind, col_ind, Mesh):
-    # Define grid object??? Might make this tidier
-    # Check if the grid search has converged, return a logical if so and update values
-    # Check if either the row or column index are outside the bounds of the grid. 
-    # If so, the point doesn't belong to any element and should be deleted
+def update_grid_search(gh, gh_prev, el_ind, Mesh):
+    # If the natural coordinates have converged to non-feasible values, find the next element
+    # in the search, and check if stopping criteria have been met 
+    # Stopping criteria are either:
+    # i) search has moved out of bounds of the mesh
+    # ii) the point lies between two elements
+    
+    # Find position of current element in the grid
+    row_ind, col_ind = get_grid_inds(el_ind, Mesh.n_x)
+    print(row_ind)
+    print(col_ind)
+    # Move to the next element in the grid based upon the converged natural coordinate
+    # values, g > 1 means move right in grid, h > 1 move up and vice versa for values < -1.  
+    if gh[0,0] < -1:
+        row_ind = row_ind - 1
+    elif gh[0,0] > 1:
+        row_ind = row_ind + 1
+    if gh[1,0] < -1:
+        col_ind = col_ind - 1
+    elif gh[1,0] > 1:
+        col_ind = col_ind + 1
+                
+    # Check if stopping criteria met, and update natural coordinates accordingly
     if ((row_ind < 0) | (row_ind >= Mesh.n_y) | (col_ind < 0) | (col_ind >= Mesh.n_x)):
         # Return nans for everything so the points may be deleted outside of the loop
-        # min_el = np.nan - deleted to provent later issues with pandas - just get rid of probably
-        # j = np.nan
         print(gh)
         print(row_ind, col_ind)
         gh = np.array([[np.nan], [np.nan]]) # Update natural coordinates
-        converged = True
+        stop = True
         print("out of bounds")
+        asdsadsad # I haven't yet had a mesh to check this works (try to find one???)
 
     elif np.any(((gh < -1) & (gh_prev > 1)) | ((gh > 1) & (gh_prev < -1))):
-        # Check for flips from hr_n > 1 to  hr_n < -1 or vice-versa, indicating the point
-        # is between the projection of the element faces onto the plane of the point, 
-        # which can occur if abive a convex curve. If this happens round to the element boundary 
+        # Check for flips from gh_n > 1 to  gh_n < -1 or vice-versa, indicating the point
+        # is between two elements which can occur if above a convex curve. 
+        # If this happens round to either element boundary 
         if ((gh[0,0] < -1) | (gh[0,0] > 1)):
             gh[0,0] = round(gh[0,0])
         if ((gh[1,0] < -1) | (gh[1,0] > 1)):
             gh[1,0] = round(gh[1,0])
-        converged = True # Break out of the while loop
+        stop = True
+        sdfdsf
     else:
-        # If neither, need to continue the search 
-        converged = False
+        # If neither, move to the next element in the grid
+        el_ind = row_ind*Mesh.n_x + col_ind
+        gh_prev = gh # Store the previous natural coordinate values to track the element search
+        stop = False
+        fdsfdsf    
 
-    return(gh, converged)
+    return(gh, gh_prev, el_ind, stop)
 
 if __name__ == "__main__":
     # Create file series and load in data
-    folder = "E:\\MengYi_Data\\CS02P_DIC\\Right Camera Pair"
-    Files = FileSeries(folder=folder,in_sub_folder="Trimmed_Data", out_sub_folder="Nat_coords_Test")
+    folder = "..\\CS02P\\DIC\\Right_Camera_Pair"
+    Files = FileSeries(folder=folder,in_sub_folder="Processed_Data", out_sub_folder="Nat_coords")
 
     # Load in mesh and create mesh object, containing nodal coordinates
     # and connectivities, as well as methods for calculating centroids,
     # normals etc
-    node_file = "E:\\MengYi_Data\\coords_undeformed.csv"
-    el_file = "E:\\MengYi_Data\\element_quad.csv"
+    # node_file = "E:\\MengYi_Data\\coords_undeformed.csv"
+    # el_file = "E:\\MengYi_Data\\element_quad.csv"
+    file_string = "..\\new_spar_mesh_outer_surface"
     # Construct mesh object based on connectivities, and calculate 
     # element normals and centroids
-    Mesh = SurfaceMesh(from_file = True, node_file=node_file, el_file=el_file)
+    Mesh = SurfaceMesh(from_file = True, file_string=file_string)
 
     # Use if mesh is ordered as a structured grid - as this info can help improve
     # the results if a point is initially assigned to the wrong element
     # Specify that the mesh is a grid, with n_x elements in the x direction, and n_y elements in the y direction
-    #n_x = 84 # number of columns in the grid
-    #n_y = 54 # number of rows in the grid
-    #Mesh.define_struct_grid(n_x, n_y)
+    n_x = 84 # number of columns in the grid
+    n_y = 54 # number of rows in the grid
+    Mesh.define_struct_grid(n_x, n_y)
 
     # Project DIC onto mesh surface and determine natural coordinates
     Files.read_data()
-    out_cols = [3, 6, 9, -1, -1, -1, -1] # Index of colums where output data is to be inserted (will need to subtract one when using in main file - pandas has read in the index here...)
+    out_cols = [3, 6, 9, -1, -1, -1] # Index of colums where output data is to be inserted (will need to subtract one when using in main file - pandas has read in the index here...)
     get_nat_coords(Files, Mesh, in_sub = "rot", out_cols=out_cols)
     Files.dump()
