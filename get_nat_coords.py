@@ -52,9 +52,10 @@ def nat_coord_search(cloud_data, Mesh, coord_labels, in_sub = [], proj_sub = "pr
             xyz_proj[i,:] = point_proj
             # Determine natural coordinates for the  point using Newton-Raphson
             gh_i, *_ = newton_raphson(point_proj, Mesh.elements[min_el].nodes)
+
             # Check if the converged natural coordinates are within the element bounds
             # (should be +/-1.) If not, move to the next element in the search.
-            if np.all((gh_i >= -1) & (gh_i <= 1)):
+            if np.all((gh_i >= -1.0) & (gh_i <= 1.0)):
                 # Exit the loop
                 break
             elif Mesh.is_grid:
@@ -69,8 +70,11 @@ def nat_coord_search(cloud_data, Mesh, coord_labels, in_sub = [], proj_sub = "pr
                     # Update projected coordinates to reflect updated element and natural coordinates
                     if update_coords:
                         xyz_proj[i,:] = intp_nodes_to_cloud([0], gh_i.T, Mesh.nodes, Mesh.elements[min_el].connectivity.reshape((1,-1)), GH = [], skip_nodes = 0).squeeze()
-                    
                     break
+                elif j==n_iter-1:
+                    # Catch to remove non-feasible points if no other stopping criteria are met in the final loop
+                    gh_i = np.array([[np.nan], [np.nan]])
+
             else:
                 # Otherwise update search based upon element with next closest centroid
                 if j == 0:
@@ -174,7 +178,7 @@ def update_grid_search(gh, gh_prev, el_ind, Mesh, update_coords = False):
         print("out of bounds")
         asdsadsad # I haven't yet had a mesh to check this works (try to find one???)
 
-    elif np.any(((gh < -1) & (gh_prev > 1)) | ((gh > 1) & (gh_prev < -1))):
+    elif np.any(((gh < -1) & (gh_prev > 1)) | ((gh > 1) & (gh_prev < -1))) and (np.all(np.abs(gh)<1.2)):
         # Check for flips from gh_n > 1 to  gh_n < -1 or vice-versa, indicating the point
         # is between two elements which can occur if above a convex curve. 
         # If this happens round to either element boundary
