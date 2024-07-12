@@ -45,13 +45,13 @@ class FileSeries:
         # Create a list of File objects
         self.files = [File(filename, self.in_path, self.out_path) for filename in natsorted(os.listdir((self.in_path)))]
 
-    def read_data(self, **kwargs):
+    def read_data(self, dropna = False, **kwargs):
         # Consider adding a progress bar
         # use kwargs to pass keywords to pandas read_csv function
         print("Reading data")
         for i, File in enumerate(self.files):
             print(i)
-            File.read_file(**kwargs)
+            File.read_file(dropna, **kwargs)
 
     def extract_qoi(self, qoi, new_names = [], dropna = True, **kwargs):
         # Extracts columns of interest from a csv files, then removes rows with missing values
@@ -61,6 +61,15 @@ class FileSeries:
         for i, File in enumerate(self.files):
             print(i)
             File.filter_data(qoi, new_names, dropna, **kwargs)
+
+    def update_datatype(self, dtype, columns = [], index = []):
+        # Update datatpye of columns specified in "columns" or "index" lissts, to type specified by 
+        # string "dtype".  Columns may be a list of column names, index list of interger or indices.
+        # If empty is applied to whole dataframe
+        print("Converting datatypes")
+        for i, File in enumerate(self.files):
+            print(i)
+            File.update_datatype(dtype, columns = columns, index = index)
 
     def apply_func_to_data(self, func, labels = [], in_sub = [], out_sub = "", rel_pos = 1, out_cols = [], message = [],  insert_by_label = True, first_file_only = False):
         # Applies a function to every dataframe, and inserts new columns with the results. 
@@ -136,12 +145,14 @@ class File:
         # Update the destination address if this is renamed
         self.dst = os.path.join(self.out_path, self.out_filename)
 
-    def read_file(self, **kwargs):
+    def read_file(self, dropna, **kwargs):
         # Use kwargs to pass options to pandas read_csv function
         if self.ext == ".vtk":
             self.data = vtk_to_pandas(self.src)
         else:
             self.data = pd.read_csv(self.src, **kwargs)
+        if dropna:
+            self.data.dropna()
         self.n_points = self.data.shape[0]
 
     def filter_data(self, qoi, new_names = [], dropna = True, **kwargs):
@@ -157,6 +168,17 @@ class File:
             self.data = self.data.dropna(ignore_index=True)
             
         self.n_points = self.data.shape[0]
+
+    def update_datatype(self, dtype, columns = [], index = []):
+        # Update datatpye of columns specified in "columns" or "index" lissts, to type specified by 
+        # string "dtype".  Columns may be a list of column names, index list of interger or indices.
+        # If empty is applied to whole dataframe        
+        if columns:
+            self.data[columns].astype(dtype)
+        elif index:
+            self.data.iloc[:,index].astype(dtype)
+        else:
+            self.data.astype(dtype)
 
     def insert_col_by_label(self, values, labels, in_sub = [], out_sub = "", rel_pos = 1):
         # Insert output to the right of input columns with labels in list "labels" + _"in_sub", with 

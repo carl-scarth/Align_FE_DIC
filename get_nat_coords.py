@@ -248,7 +248,9 @@ if __name__ == "__main__":
     Mesh.define_struct_grid(n_x, n_y)
 
     # Project DIC onto mesh surface and determine natural coordinates
-    Files.read_data()
+    Files.read_data(dropna=True)
+    # Covert index to integer
+    Files.update_datatype('int',index=[0])
     out_cols = [3, 6, 9, -1, -1, -1] # Index of colums where output data is to be inserted (will need to subtract one when using in main file - pandas has read in the index here...)
     get_nat_coords(Files, Mesh, in_sub = "rot", out_cols=out_cols, first_file_only = True)
     Files.dump()
