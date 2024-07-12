@@ -37,12 +37,16 @@ def proj_point_on_element(point, cen, n):
     point_proj = point - norm_dist*n
     return(point_proj)
 
-def find_closest_centroid(point, centroids):
+def find_closest_centroid(point, centroids, sorted_points = False, n_sort = 1):
     # Find the index df element with closest centroid to point "point",
     # where "centroids" is a numpy array where each row is the centroid of an element
     # Find the distance from each point to the centroid of all elements
+    # if sorted_points is passed, instead returns the closet n_sort points
     cen_dist = np.linalg.norm(point - centroids, axis=1)
-    min_ind = np.argmin(cen_dist)
+    min_ind = np.argsort(cen_dist)[0:n_sort]
+    # Negligable difference in runtime to output multiple minima so just do that by default
+    # min_ind = np.argmin(cen_dist)
+
     return(min_ind)
 
 if __name__ == "__main__":
