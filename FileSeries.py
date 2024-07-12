@@ -62,29 +62,55 @@ class FileSeries:
             print(i)
             File.filter_data(qoi, new_names, dropna, **kwargs)
 
-    def apply_func_to_data(self, func, labels = [], in_sub = [], out_sub = "", rel_pos = 1, out_cols = [], message = [],  insert_by_label = True):
+    def apply_func_to_data(self, func, labels = [], in_sub = [], out_sub = "", rel_pos = 1, out_cols = [], message = [],  insert_by_label = True, first_file_only = False):
         # Applies a function to every dataframe, and inserts new columns with the results. 
         # Primarily used for coordinate transformations
         # func = function which is applied to the data given as lambda function
         # labels = labels of columns to which function is applied
         # subscript = subscript added to the label of the new columns
         # rel_pos = relative position (to the right of the input column) at which new column is inserted
+        # out_cols = list of integer indices of columns to which data will be added if not by label. Default value is to end of dataframe
         # message = optional message printed to the terminal
+        # insert_by_label = Boolean indicating whether to insert output columns relative to input columns (True) or by index (False)
+        # first_file_only = Boolean indicating to apply function only to the first file, and duplicate output for all other files. Use if output expected to be identical.
         if message:
             print(message)
-        for i, File in enumerate(self.files):
-            print(i)
+        if first_file_only:
+            # Apply function to the first file, and duplicate output to all other files
+            print("0")
+            values = func(self.files[0].data)
             if insert_by_label:
                 if not labels:
                     raise Exception("To specify new column position relative to label, please input list of labels")
-                File.insert_col_with_func_by_label(func, labels, in_sub = in_sub, out_sub = out_sub, rel_pos = rel_pos)
-            else:
-                File.insert_col_with_func_by_loc(func, out_cols=out_cols)
-        # Possibly add option to just replace the column if specified by Boolean
+                for i, File in enumerate(self.files):
+                    if i > 0:
+                        print(i)
+                    if values.shape[0] != File.data.shape[0]:
+                        raise Exception("Datasets are different sizes across files, cannot duplicate output from first file across all datasets")
+                    File.insert_col_by_label(values, labels, in_sub = in_sub, out_sub = out_sub, rel_pos = rel_pos)
+                    print(File.data)
+                asdsaddsfsf
+            else:               
+                for i, File in enumerate(self.files):
+                    if i > 0:
+                        print(i)
+                    if values.shape[0] != File.data.shape[0]:
+                        raise Exception("Datasets are different sizes across files, cannot duplicate output from first file across all datasets")
+                    File.insert_col_by_loc(values, out_cols=out_cols)
+
+        else:
+            for i, File in enumerate(self.files):
+                print(i)
+                if insert_by_label:
+                    if not labels:
+                        raise Exception("To specify new column position relative to label, please input list of labels")
+                    File.insert_col_with_func_by_label(func, labels, in_sub = in_sub, out_sub = out_sub, rel_pos = rel_pos)
+                else:
+                    File.insert_col_with_func_by_loc(func, out_cols=out_cols)
+                # Possibly also add option to just replace the column if specified by Boolean
 
     def dump(self, **kwargs):
         # For just renaming it's quicker to copy. Incorporate this here when ready...
-        # Consider adding progress bar
         print("Writing Processed data")
         for i, File in enumerate(self.files):
             print(i)
@@ -132,9 +158,9 @@ class File:
             
         self.n_points = self.data.shape[0]
 
-    def insert_col_with_func_by_label(self, func, labels, in_sub = [], out_sub = "", rel_pos = 1):
+    def insert_col_by_label(self, values, labels, in_sub = [], out_sub = "", rel_pos = 1):
         # Insert output to the right of input columns with labels in list "labels" + _"in_sub", with 
-        # name appended by "_out_sub", and values given by applying function "func" to the original columns
+        # name appended by "_out_sub", using values spefieid in "values".
         # optional input rel_pos gives the relative position of the new column compared to the original
         # Only works if function output has same number of columns as input
         if in_sub:
@@ -143,8 +169,6 @@ class File:
             in_labels = labels
         out_labels = ["_".join((label, out_sub)) for label in labels]
         if all([label in self.data.columns for label in in_labels]):
-            # Perform transformation using function
-            values = func(self.data)
             if values.shape[1] != len(in_labels):
                 raise Exception("The number of columns outputted by the function do not match the specified number of labels")
             
@@ -154,10 +178,37 @@ class File:
                 self.data.insert(loc=(in_loc+rel_pos), column=out_label, value = values[:,i])
         else:
             raise Exception("The specified columns could not be found in the data")
-        
-    def insert_col_with_func_by_loc(self, func, out_cols = []):
-        # Run function
+
+    def insert_col_with_func_by_label(self, func, **kwargs): #labels, in_sub = [], out_sub = "", rel_pos = 1):
+        # given by applying function "func" to the original columns
+        # Insert output to the right of input columns with labels in list "labels" + _"in_sub", with 
+        # name appended by "_out_sub", and values given by applying function "func" to the original columns
+        # optional input rel_pos gives the relative position of the new column compared to the original
+        # Only works if function output has same number of columns as input
+        # if in_sub:
+        #     in_labels = ["_".join((label, in_sub)) for label in labels]
+        # else:
+        #    in_labels = labels
+        # out_labels = ["_".join((label, out_sub)) for label in labels]
+        #if all([label in self.data.columns for label in in_labels]):
+        #    # Perform transformation using function
         values = func(self.data)
+        print(values)
+        asdsad
+        self.insert_col_by_label(self, values, **kwargs)
+        print(self.data)
+        fsdfsdf
+            #if values.shape[1] != len(in_labels):
+            #    raise Exception("The number of columns outputted by the function do not match the specified number of labels")
+            
+            # Insert transformed data into the dataframe
+            #for i, (in_label, out_label) in enumerate(zip(in_labels, out_labels)):
+            #    in_loc = self.data.columns.get_loc(in_label)
+            #    self.data.insert(loc=(in_loc+rel_pos), column=out_label, value = values[:,i])
+        #else:
+            #raise Exception("The specified columns could not be found in the data")
+        
+    def insert_col_by_loc(self, values, out_cols = []):
         if len(out_cols) < values.shape[1]:
             # If insufficient output column indices are specified then place at end of Dataframe
             out_cols.extend([-1 for i in range(values.shape[1]-len(out_cols))])
@@ -169,6 +220,11 @@ class File:
                 self.data[column] = values[column]
             else:
                 self.data.insert(loc=loc, column=column, value = values[column])
+    
+    def insert_col_with_func_by_loc(self, func, out_cols = []):
+        # Run function
+        values = func(self.data)
+        self.insert_col_by_loc(values, out_cols)
 
     def write_data(self, sep = ",", index = False, **kwargs):
         # Use kwargs to pass writing options to pandas
