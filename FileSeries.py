@@ -118,12 +118,12 @@ class FileSeries:
                     File.insert_col_with_func_by_loc(func, out_cols=out_cols)
                 # Possibly also add option to just replace the column if specified by Boolean
 
-    def dump(self, **kwargs):
+    def dump(self, dropna = False, **kwargs):
         # For just renaming it's quicker to copy. Incorporate this here when ready...
         print("Writing Processed data")
         for i, File in enumerate(self.files):
             print(i)
-            File.write_data(**kwargs)
+            File.write_data(dropna = dropna, **kwargs)
 
 class File:
     # Properties of an individual file within a FileSeries
@@ -160,7 +160,7 @@ class File:
         # Rename columns if required
         if new_names:
             if len(self.data.columns) == len(new_names):
-                self.data.columns = new_names
+                self.data.columns = new_names 
             else:
                 warnings.warn("Specified number of new_names did not match the selected number of Colummns. Could not rename.")
         # Drop na values if required
@@ -248,6 +248,8 @@ class File:
         values = func(self.data)
         self.insert_col_by_loc(values, out_cols)
 
-    def write_data(self, sep = ",", index = False, **kwargs):
+    def write_data(self, sep = ",", index = False, dropna = False, **kwargs):
         # Use kwargs to pass writing options to pandas
-        self.data.to_csv(self.dst, sep = sep, index = index)
+        if dropna:
+            self.data.dropna(inplace=True)
+        self.data.to_csv(self.dst, sep = sep, index = index, **kwargs)
