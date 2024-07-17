@@ -169,13 +169,8 @@ def update_grid_search(gh, gh_prev, el_ind, Mesh, update_coords = False):
     # Check if stopping criteria met, and update natural coordinates accordingly
     if ((row_ind < 0) | (row_ind >= Mesh.n_y) | (col_ind < 0) | (col_ind >= Mesh.n_x)):
         # Return nans for everything so the points may be deleted outside of the loop
-        print(gh)
-        print(row_ind)
-        print(col_ind)
         gh = np.array([[np.nan], [np.nan]]) # Update natural coordinates
         stop = True
-        print("out of bounds")
-        asdsadsad # I haven't yet had a mesh to check this works (try to find one???)
 
     elif np.any(((gh < -1) & (gh_prev > 1)) | ((gh > 1) & (gh_prev < -1))) and (np.all(np.abs(gh)<1.2)):
         # Check for flips from gh_n > 1 to  gh_n < -1 or vice-versa, indicating the point
@@ -237,7 +232,8 @@ if __name__ == "__main__":
     # Load in mesh and create mesh object, containing nodal coordinates
     # and connectivities, as well as methods for calculating centroids,
     # normals etc
-    file_string = "..\\new_spar_mesh_outer_surface"
+    # file_string = "..\\new_spar_mesh_outer_surface"
+    file_string = "..\\CSpar_sam_mesh_shortflanges_outer_surface"
     # Construct mesh object based on connectivities, and calculate 
     # element normals and centroids
     Mesh = SurfaceMesh(from_file = True, file_string=file_string)
@@ -245,7 +241,7 @@ if __name__ == "__main__":
     # Specify that the mesh is a grid, with n_x elements in the x direction, and n_y elements in the y direction
     n_x = 84 # number of columns in the grid
     n_y = 54 # number of rows in the grid
-    Mesh.define_struct_grid(n_x, n_y)
+    #Mesh.define_struct_grid(n_x, n_y)
 
     # Project DIC onto mesh surface and determine natural coordinates
     Files.read_data(dropna=True)
@@ -253,4 +249,4 @@ if __name__ == "__main__":
     Files.update_datatype('int',index=[0])
     out_cols = [3, 6, 9, -1, -1, -1] # Index of colums where output data is to be inserted (will need to subtract one when using in main file - pandas has read in the index here...)
     get_nat_coords(Files, Mesh, in_sub = "rot", out_cols=out_cols, first_file_only = True)
-    Files.dump()
+    Files.dump(dropna=True)
