@@ -10,7 +10,7 @@ from SurfaceMesh import *
 from project_points import *
 from interpolate_data import intp_nodes_to_cloud
 
-def get_nat_coords(Files, Mesh, coord_labels = ["x","y","z"], in_sub = [], proj_sub = "proj", out_cols = [], first_file_only = False):
+def get_nat_coords(Files, Mesh, coord_labels = ["x","y","z"], in_sub = [], proj_sub = "proj", out_cols = [], **kwargs):
     # Read in DIC data from csv files, then apply rotations and translations
     # Files = FileSeries class containing info on the location of input csvs and desired output location
     # Mesh = Mesh object containing list of nodes and elements, and methods for determining element properties
@@ -18,7 +18,7 @@ def get_nat_coords(Files, Mesh, coord_labels = ["x","y","z"], in_sub = [], proj_
     # in_sub = subscript on coordinate labels used to identify input columns
     # proj_sub = subscript applied to projected coordinate output column labels 
     # out_cols = list of integer indices for natural coordinate output. IF not specified added to end of dataframe
-    Files.apply_func_to_data(lambda x:nat_coord_search(x, Mesh, coord_labels, in_sub = in_sub, proj_sub=proj_sub),out_cols = out_cols, message = "Projecting points onto mesh and finding natural coordinates", insert_by_label = False, first_file_only=first_file_only)
+    Files.apply_func_to_data(lambda x:nat_coord_search(x, Mesh, coord_labels, in_sub = in_sub, proj_sub=proj_sub),out_cols = out_cols, message = "Projecting points onto mesh and finding natural coordinates", insert_by_label = False, **kwargs)
 
 def nat_coord_search(cloud_data, Mesh, coord_labels, in_sub = [], proj_sub = "proj", n_iter = 4):
     # Main code for finding natural coordinates. 
