@@ -97,8 +97,6 @@ class FileSeries:
                     if values.shape[0] != File.data.shape[0]:
                         raise Exception("Datasets are different sizes across files, cannot duplicate output from first file across all datasets")
                     File.insert_col_by_label(values, labels, in_sub = in_sub, out_sub = out_sub, rel_pos = rel_pos)
-                    print(File.data)
-                asdsaddsfsf
             else:               
                 for i, File in enumerate(self.files):
                     if i > 0:
@@ -201,34 +199,16 @@ class File:
         else:
             raise Exception("The specified columns could not be found in the data")
 
-    def insert_col_with_func_by_label(self, func, **kwargs): #labels, in_sub = [], out_sub = "", rel_pos = 1):
+    def insert_col_with_func_by_label(self, func, labels, **kwargs):#in_sub = [], out_sub = "", rel_pos = 1):
         # given by applying function "func" to the original columns
         # Insert output to the right of input columns with labels in list "labels" + _"in_sub", with 
         # name appended by "_out_sub", and values given by applying function "func" to the original columns
         # optional input rel_pos gives the relative position of the new column compared to the original
         # Only works if function output has same number of columns as input
-        # if in_sub:
-        #     in_labels = ["_".join((label, in_sub)) for label in labels]
-        # else:
-        #    in_labels = labels
-        # out_labels = ["_".join((label, out_sub)) for label in labels]
-        #if all([label in self.data.columns for label in in_labels]):
-        #    # Perform transformation using function
-        values = func(self.data)
-        print(values)
-        asdsad
-        self.insert_col_by_label(self, values, **kwargs)
-        print(self.data)
-        fsdfsdf
-            #if values.shape[1] != len(in_labels):
-            #    raise Exception("The number of columns outputted by the function do not match the specified number of labels")
-            
-            # Insert transformed data into the dataframe
-            #for i, (in_label, out_label) in enumerate(zip(in_labels, out_labels)):
-            #    in_loc = self.data.columns.get_loc(in_label)
-            #    self.data.insert(loc=(in_loc+rel_pos), column=out_label, value = values[:,i])
-        #else:
-            #raise Exception("The specified columns could not be found in the data")
+        
+        # Apply the function to the data
+        values = func(self.data)        
+        self.insert_col_by_label(values, labels, **kwargs)            
         
     def insert_col_by_loc(self, values, out_cols = []):
         if len(out_cols) < values.shape[1]:
