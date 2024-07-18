@@ -4,7 +4,7 @@ import numpy as np
 import warnings
 from FileSeries import *
 
-def transform_coords(Files, label_list, is_displacement = [], R=[], T=[], subscript = "rot"):
+def transform_coords(Files, label_list, is_displacement = [], R=[], T=[], subscript = "rot", **kwargs):
     # Read in DIC data from csv files, then apply rotations and translations
     # Files = FileSeries class containing info on the location of input csvs and desired output location
     # labels is a list of coordinate labels, or a list of lists of labels if multiple transformation are required
@@ -30,9 +30,9 @@ def transform_coords(Files, label_list, is_displacement = [], R=[], T=[], subscr
     for i, labels in enumerate(label_list):
         if is_displacement[i]:
             # If the quantity is a displacement, no need to perform a translation 
-            Files.apply_func_to_data(lambda x:rotate_translate(x, coord_label=labels, R=R), labels, in_sub = [], out_sub = subscript, message = "Transforming " + ", ".join(labels))
+            Files.apply_func_to_data(lambda x:rotate_translate(x, coord_label=labels, R=R), labels, in_sub = [], out_sub = subscript, message = "Transforming " + ", ".join(labels), **kwargs)
         else:
-            Files.apply_func_to_data(lambda x:rotate_translate(x, coord_label=labels, R=R,T=T), labels, in_sub = [], out_sub = subscript, message = "Transforming " + ", ".join(labels))
+            Files.apply_func_to_data(lambda x:rotate_translate(x, coord_label=labels, R=R,T=T), labels, in_sub = [], out_sub = subscript, message = "Transforming " + ", ".join(labels), **kwargs)
 
 def rotate_translate(data, coord_label = [], R=[], T=[]):
     # apply a coordinate rotation and transformation to array of coordinates, 
