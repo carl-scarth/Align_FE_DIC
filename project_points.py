@@ -3,7 +3,7 @@ import warnings
 from SurfaceMesh import *
 from FileSeries import *
 
-def project_points(Files, Mesh, coord_labels = ["x","y","z"], in_sub = [], out_sub = "proj"):
+def project_points(Files, Mesh, coord_labels = ["x","y","z"], in_sub = [], out_sub = "proj", **kwargs):
 
     warnings.warn('Points will be projected onto the element with the nearest centroid which may not be correct. For more accurate results use "get_nat_coords" instead')
     # Determine input labels  
@@ -12,7 +12,7 @@ def project_points(Files, Mesh, coord_labels = ["x","y","z"], in_sub = [], out_s
     else:
         in_labels = coord_labels
     # Apply projection to data
-    Files.apply_func_to_data(lambda x:loop_projection(x, Mesh, in_labels), coord_labels, in_sub = in_sub, out_sub = out_sub, message = "Projecting points onto mesh")
+    Files.apply_func_to_data(lambda x:loop_projection(x, Mesh, in_labels), coord_labels, in_sub = in_sub, out_sub = out_sub, message = "Projecting points onto mesh", **kwargs)
 
 def loop_projection(cloud_data, Mesh, coord_labels):
     cloud_xyz = cloud_data[coord_labels].to_numpy() # coordinates
@@ -22,6 +22,7 @@ def loop_projection(cloud_data, Mesh, coord_labels):
     for i, point in enumerate(cloud_xyz):
         # Find element with the closest centroid to the point, to use as an intial guess for the element
         min_el = find_closest_centroid(point, Mesh.centroids)
+        min_el = min_el[0] # Take first entry as we aren't searching over the other nearby elements
         # Project onto the selected element
         point_proj = proj_point_on_element(point, Mesh.elements[min_el].centroid, Mesh.elements[min_el].n)
         xyz_proj[i,:] = point_proj
@@ -37,7 +38,7 @@ def proj_point_on_element(point, cen, n):
     point_proj = point - norm_dist*n
     return(point_proj)
 
-def find_closest_centroid(point, centroids, sorted_points = False, n_sort = 1):
+def find_closest_centroid(point, centroids, n_sort = 1):
     # Find the index df element with closest centroid to point "point",
     # where "centroids" is a numpy array where each row is the centroid of an element
     # Find the distance from each point to the centroid of all elements
