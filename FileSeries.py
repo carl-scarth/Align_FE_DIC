@@ -2,11 +2,13 @@ import os
 import pandas as pd
 import warnings
 from natsort import natsorted
+import numpy as np
 from utils import *
+from str2bool import *
 
 class FileSeries:
     # Contains properties of a series of .csv files associated with a particular test
-    def __init__(self,folder="", in_sub_folder="", out_sub_folder=""):
+    def __init__(self,folder="", in_sub_folder="", out_sub_folder="", del_sub_folder=""):
         # Perhaps pass folder as a kwargs? If not passed assume that data is in the working directory
         self.folder = folder # Parent folder in which the data is stored
         self.in_sub_folder = in_sub_folder # Subfolder in which the data is stored
@@ -14,7 +16,7 @@ class FileSeries:
             self.out_sub_folder = self.in_sub_folder
         else:
             self.out_sub_folder = out_sub_folder
-        
+        self.del_sub_folder = del_sub_folder # Subfolder where deleted data will be written, if reqired
         self.get_paths()
         # Create a directory for writing output if required
         make_out_folder(self.out_path)
@@ -40,10 +42,15 @@ class FileSeries:
         self.parent_path = os.path.join(wd,self.folder)
         self.in_path = os.path.join(wd,self.folder,self.in_sub_folder)
         self.out_path = os.path.join(wd,self.folder,self.out_sub_folder)
+        if self.del_sub_folder != "":
+            self.del_path = os.path.join(wd,self.folder,self.del_sub_folder)
 
     def get_files(self):
         # Create a list of File objects
-        self.files = [File(filename, self.in_path, self.out_path) for filename in natsorted(os.listdir((self.in_path)))]
+        if hasattr(self,"del_path"):
+            self.files = [File(filename, self.in_path, self.out_path, del_path=self.del_path) for filename in natsorted(os.listdir((self.in_path)))]
+        else:
+            self.files = [File(filename, self.in_path, self.out_path) for filename in natsorted(os.listdir((self.in_path)))]
 
     def read_data(self, dropna = False, **kwargs):
         # Consider adding a progress bar
@@ -61,6 +68,24 @@ class FileSeries:
         for i, File in enumerate(self.files):
             print(i)
             File.filter_data(qoi, new_names, dropna, **kwargs)
+
+    def filter_by_cond(self, conds, drop_cond = False, dropna = False, **kwargs):
+        # Filters the data using some logical index given in a string
+        # cond = list of strings containing logical conditions
+        # drop_cond = if true, remove the data which satisfies the condition, otherwise default to keep
+        for cond in conds:
+            print("Filtering data by: " + cond)
+            for i, File in enumerate(self.files):
+                # get logical index for the condition
+                print(i)
+                bool_ind = get_log_index(File.data, cond)
+                if drop_cond:
+                    bool_ind = ~bool_ind
+            
+                if dropna:
+                    File.trim_data_cond(bool_ind, **kwargs)    
+                else:
+                    File.make_na_cond(bool_ind, **kwargs)
 
     def update_datatype(self, dtype, columns = [], index = []):
         # Update datatpye of columns specified in "columns" or "index" lissts, to type specified by 
@@ -90,14 +115,16 @@ class FileSeries:
             values = func(self.files[0].data)
             if insert_by_label:
                 if not labels:
-                    raise Exception("To specify new column position relative to label, please input list of labels")
+                    raise Exception("To specify new column position relative to label, please input list of labels as labels=")
                 for i, File in enumerate(self.files):
                     if i > 0:
                         print(i)
                     if values.shape[0] != File.data.shape[0]:
                         raise Exception("Datasets are different sizes across files, cannot duplicate output from first file across all datasets")
                     File.insert_col_by_label(values, labels, in_sub = in_sub, out_sub = out_sub, rel_pos = rel_pos)
-            else:               
+            else:  
+                if not out_cols: 
+                    raise Exception("To specify new column position with index, please return list of indices as out_cols=")             
                 for i, File in enumerate(self.files):
                     if i > 0:
                         print(i)
@@ -110,9 +137,11 @@ class FileSeries:
                 print(i)
                 if insert_by_label:
                     if not labels:
-                        raise Exception("To specify new column position relative to label, please input list of labels")
+                        raise Exception("To specify new column position relative to label, please input list of labels as labels=")
                     File.insert_col_with_func_by_label(func, labels, in_sub = in_sub, out_sub = out_sub, rel_pos = rel_pos)
                 else:
+                    if not out_cols:
+                        raise Exception("To specify new column position with index, please return list of indices as out_cols=")
                     File.insert_col_with_func_by_loc(func, out_cols=out_cols)
                 # Possibly also add option to just replace the column if specified by Boolean
 
@@ -123,9 +152,30 @@ class FileSeries:
             print(i)
             File.write_data(dropna = dropna, **kwargs)
 
+    def dump_data_del(self, **kwargs):
+        # Use kwargs to pass arguments to pandas to_csv()
+        print("Writing deleted data")
+        if not hasattr(self, "del_path"):
+            self.del_path = self.out_path+"_del"
+        make_out_folder(self.del_path) # Create subfolder if it doesn't already exist
+
+        for i, File in enumerate(self.files):
+            print(i)
+            # Update file definition if a destination for deleted data hasn't been given
+            if not hasattr(File, "del_dst"):
+                File.update_del_dst(self.del_path) 
+            File.write_del_data(**kwargs)
+
+    def dump_nas(self, **kwargs):
+        # Use kwargs to pass arguments to pandas to_csv()
+        # Copy rows with nas to data_del
+        for File in self.files:
+            File.flag_nas_as_del()
+        self.dump_data_del(**kwargs)
+
 class File:
     # Properties of an individual file within a FileSeries
-    def __init__(self, filename, in_path, out_path):
+    def __init__(self, filename, in_path, out_path, del_path = ""):
         self.in_filename = filename
         self.out_filename = filename # Default output filename is the same as the input
         self.in_path = in_path
@@ -133,15 +183,24 @@ class File:
         self.out_path = out_path
         self.src = os.path.join(self.in_path, filename)
         if self.ext == ".vtk":
-            out_filename = os.path.splitext(filename)[0] + ".csv"
-            self.dst = os.path.join(self.out_path, out_filename)
-        else:
-            self.dst = os.path.join(self.out_path, filename)
+            self.out_filename = os.path.splitext(filename)[0] + ".csv"
+            #self.dst = os.path.join(self.out_path, self.out_filename)
+        #else:
+        #    self.dst = os.path.join(self.out_path, filename)
+        self.dst = os.path.join(self.out_path, self.out_filename)
+        if del_path != "":
+            self.del_path = del_path
+            self.del_dst = os.path.join(self.del_path, self.out_filename)    
         self.data = [] # add data from csv files
 
     def update_dst(self):
         # Update the destination address if this is renamed
         self.dst = os.path.join(self.out_path, self.out_filename)
+
+    def update_del_dst(self, del_path):
+        # Update the destination address if this is renamed
+        self.del_path = del_path
+        self.del_dst = os.path.join(self.del_path, self.out_filename)
 
     def read_file(self, dropna, **kwargs):
         # Use kwargs to pass options to pandas read_csv function
@@ -166,6 +225,32 @@ class File:
             self.data = self.data.dropna(ignore_index=True)
             
         self.n_points = self.data.shape[0]
+
+    def make_na_cond(self, cond, na_col = []):
+        # Make data points na based upon some logical index, which must have the same number of rows as self.data. 
+        # Used to mark datapoints for later deletion
+        # cond is a logical index
+        # na_col is column used to flag nas. If not specified all columns are set to na
+        if na_col:
+            self.data.loc[~cond, na_col] = np.nan
+        else:
+            self.data[~cond] = np.nan
+
+    def trim_data_cond(self, cond, store_data_del = False):
+        # Remove data by row based upon some logical index, which must have the same number of rows as self.data
+        # If specified, retain deleted data 
+        if store_data_del:
+            if not hasattr(self, "data_del"):
+                self.data_del = pd.DataFrame(columns=self.data.columns)
+            self.data_del = pd.concat([self.data_del, self.data[~cond]], axis=0)
+        self.data = self.data[cond]
+
+    def flag_nas_as_del(self):
+        # Create a data_del attribute containing all rows of self.data containing na values, to track
+        # points which are deleted
+        if not hasattr(self, "data_del"):
+            self.data_del = pd.DataFrame(columns=self.data.columns)        
+        self.data_del = pd.concat([self.data_del, self.data[self.data.isna().any(axis=1)]])
 
     def update_datatype(self, dtype, columns = [], index = []):
         # Update datatpye of columns specified in "columns" or "index" lissts, to type specified by 
@@ -231,5 +316,12 @@ class File:
     def write_data(self, sep = ",", index = False, dropna = False, **kwargs):
         # Use kwargs to pass writing options to pandas
         if dropna:
-            self.data.dropna(inplace=True)
-        self.data.to_csv(self.dst, sep = sep, index = index, **kwargs)
+            self.data.dropna().to_csv(self.dst, sep = sep, index = index, **kwargs)
+        else:
+            self.data.to_csv(self.dst, sep = sep, index = index, **kwargs)
+
+    def write_del_data(self, sep = ",", index = False, **kwargs):
+        # Write deleted data to folder
+        if not hasattr(self,"data_del"):
+            raise Exception("No deleted data exists. If tracking with NAs, use dump_nas() instead")
+        self.data_del.to_csv(self.del_dst, sep = sep, index = index, **kwargs)
