@@ -43,7 +43,7 @@ def nat_coord_search(cloud_data, Mesh, coord_labels, in_sub = [], proj_sub = "pr
     for i, point in enumerate(cloud_xyz):
         # Find element with the closest centroid to the point, to use as an intial guess for the element.
         # Returns the first n_iter elements
-        nearest_els = find_closest_centroid(point, Mesh.centroids, sorted_points = True, n_sort=n_iter)
+        nearest_els = find_closest_centroid(point, Mesh.centroids, n_sort=n_iter)
         min_el = nearest_els[0]
         for j in range(n_iter):
             # Project point onto the surface of the current element, and store result
