@@ -22,10 +22,15 @@ if __name__ == "__main__":
     #              "z_proj >= 185.0 & z_proj <= 235.0 & y_proj < 11.25", # Points in the obscured radius in the central region
     #              "z_proj >= 60.0 & z_proj < 185.0 & y_proj < z_proj / 20.0 + 2.0",
     #              "z_proj > 235.0 & z_proj <= 360.0 & y_proj < z_proj / -20.0 + 23.0"]
-    bound_list = ["y_proj > 145", #points in the far radius of the ends
-                  "z_proj >= 185.0 & z_proj <= 235.0 & y_proj > 138.75", # Points in the far radius in the central region
-                  "z_proj >= 60.0 & z_proj < 185.0 & y_proj > -z_proj / 20.0 + 148.0", # Point in the far radius in the ramp
-                  "z_proj > 235.0 & z_proj <= 360.0 & y_proj > z_proj / 20.0 + 127.0"]
+    #bound_list = ["y_proj > 145", #points in the far radius of the ends
+    #              "z_proj >= 185.0 & z_proj <= 235.0 & y_proj > 138.75", # Points in the far radius in the central region
+    #              "z_proj >= 60.0 & z_proj < 185.0 & y_proj > -z_proj / 20.0 + 148.0", # Point in the far radius in the ramp
+    #              "z_proj > 235.0 & z_proj <= 360.0 & y_proj > z_proj / 20.0 + 127.0"]
+
+    bound_list = ["z_proj >= 407.5 & z_proj >= 407.5], #points in the far radius of the ends
+    #              "z_proj >= 185.0 & z_proj <= 235.0 & y_proj > 138.75", # Points in the far radius in the central region
+    #              "z_proj >= 60.0 & z_proj < 185.0 & y_proj > -z_proj / 20.0 + 148.0", # Point in the far radius in the ramp
+    #              "z_proj > 235.0 & z_proj <= 360.0 & y_proj > z_proj / 20.0 + 127.0"]
 
     trim_bounds(Files, bound_list, drop_cond=True, dropna=False, na_col = "Time")
     # Write output
