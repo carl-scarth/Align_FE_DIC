@@ -1,20 +1,23 @@
 from FileSeries import *
+from SurfaceMesh import *
 from rename_files import *
 from subtract_displacement import *
 from transform_coords import *
+from project_points import *
+import os
 
 # Set up FileSeries object. This contains all the code the details of
 # the main directory where data is stored, sub_folder with input data,
 # and subfolder to which data is written. Also code for looping over
 # different files, reading and writing, and applying functions to data
-# folder = "E:\\MengYi_Data\\CS02P_DIC\\Right Camera Pair"
-folder = "E:\\MengYi_Data\\CS02P_DIC\\Left Camera Pair" # Parent folder of data
+folder = "E:\\MengYi_Data\\CS02P_DIC\\Right Camera Pair"
+# folder = "E:\\MengYi_Data\\CS02P_DIC\\Left Camera Pair" # Parent folder of data
 in_sub_folder = "Raw_Data" # Subfolder where input data is stored
-out_sub_folder = "Transformed_Data" # Subfolder where output data will be written (will be creating if it doesn't exist already)
+out_sub_folder = "Projection_Test" # Subfolder where output data will be written (will be created if it doesn't exist already)
 test_data = FileSeries(folder=folder, in_sub_folder=in_sub_folder, out_sub_folder=out_sub_folder)
 
 # Use if you want to select a subset of the data (e.g. take a regular sample every 20 images)
-test_data.down_sam(20, rename_files=True)
+test_data.down_sam(30, rename_files=True)
 
 # Read in data from files 
 test_data.read_data(sep=",") # Read in the data
@@ -33,5 +36,14 @@ is_displacement = [False, True]
 # Apply transformations
 transform_coords(test_data, trans_coord_labels, is_displacement = is_displacement, R=R, T=T, subscript = "rot")
 
+# Project onto mesh
+# Load in mesh and create mesh object, containing nodal coordinates and
+# connectivities, as well as methods for calculating centroids, normals etc
+node_file = "E:\\MengYi_Data\\coords_undeformed.csv"
+el_file = "E:\\MengYi_Data\\element_quad.csv"
+# Construct mesh object based on connectivities, and calculate 
+# element normals and centroids
+FEMesh = SurfaceMesh(from_file = True, node_file=node_file, el_file=el_file)
+project_points(test_data, FEMesh, in_sub = "rot")
 # Write transformed data to csvs
 test_data.dump()
