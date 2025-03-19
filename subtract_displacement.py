@@ -6,7 +6,7 @@ def subtract_disp(Files, column_labels = [["x", "u"],["y", "v"],["z","w"]]):
     # Files = FileSeries class containing info on the location of input csvs and desired output location
     # Define list of coordinate indices, and their corresponding displacement index
     # Column inds = list of coordinate labels and the corresponding displacement component
-    Files.apply_func_to_data(lambda x:subtract_columns(x,column_labels), [labels[0] for labels in column_labels], "0", message = "Subtracting displacement")
+    Files.apply_func_to_data(lambda x:subtract_columns(x,column_labels), labels = [labels[0] for labels in column_labels], out_sub = "0", message = "Subtracting displacement")
 
 def subtract_columns(data, column_labels = [["x", "u"],["y", "v"],["z","w"]]):
 
