@@ -1,4 +1,4 @@
-
+ 
 # Takes in test data, extracts quantities of interest, then dumps resulting csvs into a folder
 
 from FileSeries import *
@@ -31,6 +31,6 @@ if __name__ == "__main__":
     new_names = ["x", "y", "z", "u", "v", "w", "Exx", "Eyy", "Exy", "EI", "EII"]
 
     folder = "..\\Failure\\Processed DIC Data\\Individual Fields of View\\Alvium Pair 03\\Export_2"
-    # folder = "..\\Failure\\Processed DIC Data\\Individual Fields of View\\Manta Camera Pair\\Export_2"
     Files = FileSeries(folder=folder,in_sub_folder="Suffix_removed",out_sub_folder="Extracted_qoi")
     extract_qoi(Files, QoI, new_names=new_names)
+    Files.dump()
