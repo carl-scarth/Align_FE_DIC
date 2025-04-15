@@ -12,8 +12,6 @@ def extract_qoi(Files, QoI, new_names = []):
     # Loop through all files in the folder
     Files.read_data(sep=",")
     Files.extract_qoi(QoI, new_names)
-    # Write selected data to paths
-    Files.dump()
 
 if __name__ == "__main__":
     QoI = ["coor.X [mm]", 
