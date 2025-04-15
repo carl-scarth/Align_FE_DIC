@@ -45,46 +45,50 @@ def nat_coord_search(cloud_data, Mesh, coord_labels, in_sub = [], proj_sub = "pr
         # Returns the first n_iter elements
         nearest_els = find_closest_centroid(point, Mesh.centroids, n_sort=n_iter)
         min_el = nearest_els[0]
-        for j in range(n_iter):
-            # Project point onto the surface of the current element, and store result
-            point_proj = proj_point_on_element(point, Mesh.elements[min_el].centroid, Mesh.elements[min_el].n)
-            xyz_proj[i,:] = point_proj
-            # Determine natural coordinates for the  point using Newton-Raphson
-            gh_i, *_ = newton_raphson(point_proj, Mesh.elements[min_el].nodes)
+        if not np.any(np.isnan(point)):
+            for j in range(n_iter):
+                # Project point onto the surface of the current element, and store result
+                point_proj = proj_point_on_element(point, Mesh.elements[min_el].centroid, Mesh.elements[min_el].n)
+                xyz_proj[i,:] = point_proj
+                # Determine natural coordinates for the  point using Newton-Raphson
+                gh_i, *_ = newton_raphson(point_proj, Mesh.elements[min_el].nodes)
 
-            # Check if the converged natural coordinates are within the element bounds
-            # (should be +/-1.) If not, move to the next element in the search.
-            if np.all((gh_i >= -1.0) & (gh_i <= 1.0)):
-                # Exit the loop
-                break
-            elif Mesh.is_grid:
-                # Use the grid search method if mesh is a structured grid
-                if j == 0:
-                    gh_prev = np.array([[np.nan], [np.nan]]) # for tracking previous converged value of gh
-
-                # Find the next element to consider in the search, and check if stopping criteria are met
-                gh_i, gh_prev, min_el, stop, update_coords = update_grid_search(gh_i, gh_prev, min_el, Mesh)
-                # Break out of loop if stopping criteria met
-                if stop:
-                    # Update projected coordinates to reflect updated element and natural coordinates
-                    if update_coords:
-                        xyz_proj[i,:] = intp_nodes_to_cloud([0], gh_i.T, Mesh.nodes, Mesh.elements[min_el].connectivity.reshape((1,-1)), GH = [], skip_nodes = 0).squeeze()
+                # Check if the converged natural coordinates are within the element bounds
+                # (should be +/-1.) If not, move to the next element in the search.
+                if np.all((gh_i >= -1.0) & (gh_i <= 1.0)):
+                    # Exit the loop
                     break
-                elif j==n_iter-1:
-                    # Catch to remove non-feasible points if no other stopping criteria are met in the final loop
-                    gh_i = np.array([[np.nan], [np.nan]])
+                elif Mesh.is_grid:
+                    # Use the grid search method if mesh is a structured grid
+                    if j == 0:
+                        gh_prev = np.array([[np.nan], [np.nan]]) # for tracking previous converged value of gh
 
-            else:
-                # Otherwise update search based upon element with next closest centroid
-                if j == 0:
-                    res_all = []
-                    gh_all = []
-                    min_el_all = []
-                gh_i, gh_all, res_all, min_el, min_el_all = update_cen_search(j, n_iter, nearest_els, gh_i, gh_all, min_el, min_el_all, res_all)
-                if j == n_iter-1:
-                    #  Update projected coordinates to reflect updated element and natural coordinates
-                    xyz_proj[i,:] = intp_nodes_to_cloud([0], gh_i.T, Mesh.nodes, Mesh.elements[min_el].connectivity.reshape((1,-1)), GH = [], skip_nodes = 0).squeeze()
-            
+                    # Find the next element to consider in the search, and check if stopping criteria are met
+                    gh_i, gh_prev, min_el, stop, update_coords = update_grid_search(gh_i, gh_prev, min_el, Mesh)
+                    # Break out of loop if stopping criteria met
+                    if stop:
+                        # Update projected coordinates to reflect updated element and natural coordinates
+                        if update_coords:
+                            xyz_proj[i,:] = intp_nodes_to_cloud([0], gh_i.T, Mesh.nodes, Mesh.elements[min_el].connectivity.reshape((1,-1)), GH = [], skip_nodes = 0).squeeze()
+                        break
+                    elif j==n_iter-1:
+                        # Catch to remove non-feasible points if no other stopping criteria are met in the final loop
+                        gh_i = np.array([[np.nan], [np.nan]])
+
+                else:
+                    # Otherwise update search based upon element with next closest centroid
+                    if j == 0:
+                        res_all = []
+                        gh_all = []
+                        min_el_all = []
+                    gh_i, gh_all, res_all, min_el, min_el_all = update_cen_search(j, n_iter, nearest_els, gh_i, gh_all, min_el, min_el_all, res_all)
+                    if j == n_iter-1:
+                        #  Update projected coordinates to reflect updated element and natural coordinates
+                        xyz_proj[i,:] = intp_nodes_to_cloud([0], gh_i.T, Mesh.nodes, Mesh.elements[min_el].connectivity.reshape((1,-1)), GH = [], skip_nodes = 0).squeeze()
+        else:
+            min_el = -1
+            gh_i = np.array([[np.nan, np.nan]])
+
         # Store the index of the element in which the current point sits
         el_ind.append(min_el)
         gh[i,:] = gh_i.squeeze()
@@ -229,24 +233,20 @@ if __name__ == "__main__":
     folder = "..\\CS02P\\DIC\\Right_Camera_Pair"
     Files = FileSeries(folder=folder,in_sub_folder="Processed_Data_Working", out_sub_folder="Nat_coords")
 
-    # Load in mesh and create mesh object, containing nodal coordinates
-    # and connectivities, as well as methods for calculating centroids,
-    # normals etc
-    # file_string = "..\\new_spar_mesh_outer_surface"
-    file_string = "..\\CSpar_sam_mesh_shortflanges_outer_surface"
-    # Construct mesh object based on connectivities, and calculate 
-    # element normals and centroids
+    # Load in mesh and create mesh object, containing nodal coordinates and connectivities
+    file_string = "..\\new_spar_mesh_outer_surface"
     Mesh = SurfaceMesh(from_file = True, file_string=file_string)
 
-    # Specify that the mesh is a grid, with n_x elements in the x direction, and n_y elements in the y direction
+    # Specify that the mesh is a grid, with n_x elements in the x direction, 
+    # and n_y elements in the y direction
     n_x = 84 # number of columns in the grid
     n_y = 54 # number of rows in the grid
-    #Mesh.define_struct_grid(n_x, n_y)
+    Mesh.define_struct_grid(n_x, n_y)
 
     # Project DIC onto mesh surface and determine natural coordinates
     Files.read_data(dropna=True)
     # Covert index to integer
     Files.update_datatype('int',index=[0])
-    out_cols = [3, 6, 9, -1, -1, -1] # Index of colums where output data is to be inserted (will need to subtract one when using in main file - pandas has read in the index here...)
+    out_cols = [3, 6, 9, -1, -1, -1] # Index of colums where output data is to be inserted
     get_nat_coords(Files, Mesh, in_sub = "rot", out_cols=out_cols, first_file_only = True)
     Files.dump(dropna=True)
