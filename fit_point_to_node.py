@@ -1,5 +1,7 @@
-# Converts displacement predictions at multiple points in an element to nodes
-# using least squares
+# Inverse mapping of a displacement point cloud onto the nodes of an FE mesh
+# Fits the nodaal displacement in the ABAQUS interpolation functions to the 
+# point cloud data using least-squares
+# Assumes the point cloud is more dense than the mesh
 
 import os
 import pandas as pd
@@ -8,7 +10,7 @@ from numpy.linalg import lstsq
 
 def intp_coeffs(gh):
     # Returns a set of coefficients for the nodal quantities in the 
-    # interpolation functions for a first-order quad elemennt given
+    # interpolation functions for a first-order quad element given
     # natural coordinates g and h
     GH = np.array([[-1.0,-1.0],[1.0,-1.0],[1.0,1.0],[-1.0,1.0]]) # Natural coordinates of the nodes
     bases = 1.0 + gh*GH
@@ -17,8 +19,8 @@ def intp_coeffs(gh):
 
 if __name__ == "__main__":
     # Directories for input/output
-    folder = "E:\\MengYi_Data\\CS02P_DIC\\Left Camera Pair"
-    in_subfolder = "Nat_coords_nadrop"
+    folder = "input_output"
+    in_subfolder = "output"
     out_subfolder = "Nodal_DIC"
     in_path = os.path.join(os.getcwd(),folder)
     if out_subfolder not in os.listdir(in_path):
@@ -86,7 +88,5 @@ if __name__ == "__main__":
         out_frame = pd.concat((nodes, disp_nodes), axis = 1)
         out_frame.insert(0, "Node_ID",out_frame.index.values+1)
         out_frame["Load"] = cloud_data["Load"].values[0]
-        print(out_frame)
-        dsadsad
         dst = os.path.join(in_path,out_subfolder,file)
         out_frame.dropna().to_csv(dst,sep=",",index=False)
