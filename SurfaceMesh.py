@@ -6,6 +6,10 @@ class SurfaceMesh:
     def __init__(self, nodes = [], connectivity = [], convert_conn = True, from_file = False, file_string = [], node_file = [], el_file = []):
         # nodes = numpy array containing node coordinates
         # connectivity = numpy array containing element connectivity information
+        # conert_conn = Boolean indicating if necessary to convert to python notation
+        # from_file = Boolean inidicating if node and element definitions are to be read from file
+        # file_string - if passed used the same labeling for node and element files, with name file_string_nodes.csv and file_string_elements.csv
+        # node_file, el_file - used to pass separate filenames for node and element csvs
         
         # Determine if correct information has been provided to initialise mesh object
         if from_file:
