@@ -2,8 +2,7 @@ import os
 import pandas as pd
 import numpy as np
 from FileSeries import *
-from utils import model_force_from_json
-from downsample_data import *
+from utils import model_force_from_json, downsample_data
 
 # Interpolate data to specified applied load values
 def interp_load(Files, model_force, interp_by_col = "Load", downsam = False, downsam_rate = 1, dropna = True, output_all = True, output_frames = True):
