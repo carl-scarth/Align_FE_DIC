@@ -230,11 +230,11 @@ def update_cen_search(j, n_iter, nearest_els, gh, gh_all, el_ind, el_ind_all, re
 
 if __name__ == "__main__":
     # Create file series and load in data
-    folder = "..\\CS02P\\DIC\\Right_Camera_Pair"
-    Files = FileSeries(folder=folder,in_sub_folder="Processed_Data_Working", out_sub_folder="Nat_coords")
+    folder = "input_output"
+    Files = FileSeries(folder=folder,in_sub_folder="input", out_sub_folder="output")
 
     # Load in mesh and create mesh object, containing nodal coordinates and connectivities
-    file_string = "..\\new_spar_mesh_outer_surface"
+    file_string = "input_output\\FE_mesh"
     Mesh = SurfaceMesh(from_file = True, file_string=file_string)
 
     # Specify that the mesh is a grid, with n_x elements in the x direction, 

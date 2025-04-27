@@ -52,16 +52,13 @@ def find_closest_centroid(point, centroids, n_sort = 1):
 
 if __name__ == "__main__":
     # Create file series and load in data
-    folder = "E:\\MengYi_Data\\CS02P_DIC\\Right Camera Pair"
-    Files = FileSeries(folder=folder,in_sub_folder="Trimmed_Data", out_sub_folder="Projection_Test")
+    folder = "input_output"
+    Files = FileSeries(folder=folder,in_sub_folder="input", out_sub_folder="output")
 
     # Load in mesh and create mesh object, containing nodal coordinates
-    # and connectivities, as well as methods for calculating centroids,
-    # normals etc
-    node_file = "E:\\MengYi_Data\\coords_undeformed.csv"
-    el_file = "E:\\MengYi_Data\\element_quad.csv"
-    # Construct mesh object based on connectivities, and calculate 
-    # element normals and centroids
+    # and connectivities and create SurfaceMesh object
+    node_file = "input_output\\FE_mesh_elements.csv"
+    el_file = "input_output\\FE_mesh_nodes.csv"
     Mesh = SurfaceMesh(from_file = True, node_file=node_file, el_file=el_file)
 
     # Project DIC onto mesh surface

@@ -12,6 +12,7 @@ def transform_coords(Files, label_list, is_displacement = [], R=[], T=[], subscr
     # are displacements, in which case only a rotation is performed
     # R is a dxd rotation matrix where d is the number of columns indexed by each entry of label_list
     # T is a d-dimensional vector used to translate the coordinates, where d is the number of columns indexed by each entry of label_list
+    # subscript is a string which is appended to the column names of the transformed data
     
     # If a single string has been provided covert to list
     if type(label_list) is not list:
@@ -71,18 +72,13 @@ def transmat_from_file(transmat_file, delimiter=" ", header = False):
     return R, T
 
 if __name__ == "__main__":
-    # folder = "..\\Failure\\Processed DIC Data\\Individual Fields of View\\Alvium Pair 03\\Export_2"
-    # folder = "..\\Failure\\Processed DIC Data\\Individual Fields of View\\Manta Camera Pair\\Export_2"
-    folder = "..\\New_Failure_Test"
-    # Files = FileSeries(folder=folder,in_sub_folder="Data_subtracted_disp", out_sub_folder="Data_rotated_2")
-    Files = FileSeries(folder=folder,in_sub_folder="Raw_Data", out_sub_folder="Data_rotated")
-    # Define file where transformation matrix is stored
-    transmat_file = os.path.join(folder, "new_test_rot_mat.txt")
-    # Read in transformation matrix
+    folder = "input_output"
+    Files = FileSeries(folder=folder,in_sub_folder="input",out_sub_folder="output")
+    # Define file where transformation matrix is stored and read in transformation matrix
+    transmat_file = os.path.join(folder, "transformation_matrix.txt")
     R, T = transmat_from_file(transmat_file)
-    # labels = [["x", "y", "z"],["x_0","y_0","z_0"],["u","v","w"]]
-    labels = [["X", "Y", "Z"],["u","v","w"],["cu","cv","cw"]]
-    is_displacement = [False, True, True]
+    labels = [["x", "y", "z"],["u","v","w"]]
+    is_displacement = [False, True]
     Files.read_data()
     transform_coords(Files, labels, is_displacement = is_displacement, R=R, T=T)
     Files.dump()

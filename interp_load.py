@@ -71,8 +71,8 @@ def interp_load(Files, model_force, interp_by_col = "Load", downsam = False, dow
         all_frames_DIC.to_csv(os.path.join(Files.in_path, "Interpolated_DIC.csv"), sep=",", index=True)
 
 if __name__ == "__main__":
-    folder = "..\\CS02P\\DIC\\Left_Camera_Pair"
-    Files = FileSeries(folder=folder,in_sub_folder="Trimmed_Rad", out_sub_folder="Interpolated_Data")
+    folder = "input_output"
+    Files = FileSeries(folder=folder,in_sub_folder="input", out_sub_folder="output")
     Files.read_data()
     # truncate the data to before failure occurs
     Files.trunctate_data(end = 336)

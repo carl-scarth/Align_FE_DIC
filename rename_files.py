@@ -25,7 +25,6 @@ def remove_suffix(FileObj, suffix="_0.tiff"):
     FileObj.update_dst()
 
 if __name__ == "__main__":
-    # folder = "..\\Failure\\Processed DIC Data\\Individual Fields of View\\Manta Camera Pair\\Export_2"
-    folder = "..\\Failure\\Processed DIC Data\\Individual Fields of View\\Alvium Pair 03\\Export_2"
-    Files = FileSeries(folder=folder,in_sub_folder="Raw_data",out_sub_folder="Suffix_removed")
+    folder = "input_output"
+    Files = FileSeries(folder=folder,in_sub_folder="input",out_sub_folder="output")
     rename_files(Files)
