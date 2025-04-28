@@ -8,7 +8,7 @@ from numpy import linalg
 from FileSeries import *
 from SurfaceMesh import *
 from project_points import *
-from interp_nodes_to_cloud import *
+from interp_nodes_to_point import *
 
 def get_nat_coords(Files, Mesh, coord_labels = ["x","y","z"], in_sub = [], proj_sub = "proj", out_cols = [], **kwargs):
     # Read in DIC data from csv files, then apply rotations and translations
