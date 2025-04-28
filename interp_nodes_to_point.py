@@ -1,6 +1,6 @@
 import numpy as np
 
-def interp_nodes_to_cloud(el_ind, gh, f_node, conn, GH = [], skip_nodes = 0):
+def interp_nodes_to_point(el_ind, gh, f_node, conn, GH = [], skip_nodes = 0):
     # Interpolate nodal quantities f_node from nodes of a quad element mesh to 
     # n_cloud point cloud coordinates. 
     # el_ind = n_cloud vector of integer element indices, matching an element in

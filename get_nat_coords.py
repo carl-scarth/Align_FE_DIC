@@ -69,7 +69,7 @@ def nat_coord_search(cloud_data, Mesh, coord_labels, in_sub = [], proj_sub = "pr
                     if stop:
                         # Update projected coordinates to reflect updated element and natural coordinates
                         if update_coords:
-                            xyz_proj[i,:] = intp_nodes_to_cloud([0], gh_i.T, Mesh.nodes, Mesh.elements[min_el].connectivity.reshape((1,-1)), GH = [], skip_nodes = 0).squeeze()
+                            xyz_proj[i,:] = interp_nodes_to_point([0], gh_i.T, Mesh.nodes, Mesh.elements[min_el].connectivity.reshape((1,-1)), GH = [], skip_nodes = 0).squeeze()
                         break
                     elif j==n_iter-1:
                         # Catch to remove non-feasible points if no other stopping criteria are met in the final loop
