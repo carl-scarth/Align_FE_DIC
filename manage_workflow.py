@@ -58,6 +58,11 @@ get_nat_coords(test_data, Mesh, in_sub = "0_rot", out_cols = [4, 9, 14, -1, -1, 
 
 # Filter the points to retain only points between 15.0 <= z_proj <= 405.0
 bound_list = ["z_proj < 15.0", "z_proj > 405.0"]
+# Example of more complex logical conditions
+# bound_list = ["y_proj < 5.0",
+#              "z_proj >= 185.0 & z_proj <= 235.0 & y_proj < 11.25", 
+#              "z_proj >= 60.0 & z_proj < 185.0 & y_proj < z_proj / 20.0 + 2.0",
+#              "z_proj > 235.0 & z_proj <= 360.0 & y_proj < z_proj / -20.0 + 23.0"]
 test_data.filter_by_cond(bound_list, drop_cond = True)
 
 # Write output csvs
