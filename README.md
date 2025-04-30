@@ -2,11 +2,11 @@
 
 ## Overview 
 
-Aimed at manipulating experimental point cloud data for coordinate transformations during alignment with Finite Element (FE) models, and for expressing points in the local element coordinate systems. Expressing points in a common coordinate system enables direct comparison of outputs. This repository was developed for comparing post-processed Digital Image Correlation (DIC) displacement data against [ABAQUS](https://www.3ds.com/products/simulia/abaqus) model output using 4-noded (S4) elements. 
+Aimed at manipulating experimental point cloud data for coordinate transformations during alignment with Finite Element (FE) models, and for expressing points in local element coordinate systems. Expressing points in a common coordinate system enables direct comparison of outputs. This repository was developed for comparing post-processed Digital Image Correlation (DIC) displacement data against [ABAQUS](https://www.3ds.com/products/simulia/abaqus) model output using 4-noded (S4) elements. 
 
 ## Features
 
-Align_FE_DIC is built to apply a series of manipulations to time-dependent point cloud data. The time-dependency of the point cloud is represented by storing data across a set of .csv or .vtk files, with filenames suffixed by integers (not necessarily consecutive) with increasing time represented by increasing suffix value. Align_FE_DIC is constructed to apply methods across all spatial points and time indices to produce output with consistent data structure. Data is stored as pandas DataFrames within FileSeries objects, which adapt the functionality of pandas to suit the specified data structure.
+Align_FE_DIC is built to apply a series of manipulations to time-dependent point cloud data. The time-dependency of the point cloud is represented by storing data across a set of .csv or .vtk files, with filenames suffixed by integers, where increasing time is represented by increasing suffix value. Align_FE_DIC is constructed to apply methods across all spatial points and time indices to produce output with consistent data structure. Data is stored as pandas DataFrames within FileSeries objects, which adapt the functionality of pandas to suit the specified data structure.
 
 Key features include:
 1) Basic data manipulations including extracting data from specific columns, renaming columns, down-sampling in time and space, and filtering using data values and Boolean comparators.
@@ -20,7 +20,7 @@ Key features include:
 
 ### Overview
 
-Align_FE_DIC is constructed to allow a series of point cloud operations to be performed via a high-level python script. For a quick-start demonstration of key functionality, <code>manage_workflow.py</code> is included as an example of how to set up this script, along with an example FE mesh and point cloud data. Inputs and output point clouds are stored under parent directory "input_output", in subdirectories "input" and "output" respectively. Mesh data and other inputs are stored under the parent directory. This script may be run to test functionality and modified to suit the required application and data structure. Individual methods may also be used as standalone procedures by modifying their <code>if __name__ == "__main__"</code> block and running directly from the command line.
+Align_FE_DIC is constructed to allow a series of point cloud operations to be performed via a high-level python script. For a quick-start demonstration of key functionality, `manage_workflow.py` is included as an example of how to set up this script, along with an example FE mesh and point cloud data. Inputs and output point clouds are stored under parent directory "input_output", in subdirectories "input" and "output" respectively. Mesh data and other inputs are stored under the parent directory. This script may be run to test functionality and modified to suit the required application and data structure. Individual methods may also be used as standalone procedures by modifying their <code>if __name__ == "__main__"</code> block and running directly from the command line.
 
 More specific inforrmation on usage is detailed below.
 
