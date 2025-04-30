@@ -1,6 +1,89 @@
-Contains code used to process point clouds from processed Digital Image Correlation (DIC) data, and align these with Abaqus Finite Element models.
-Includes code for:
-1) Loading DIC from csv, extracting quantities of interest, and if necessary removing outliers.
-2) Rotating/translating DIC coordinates and displacements according to specified translation/rotation matrices for alignment with the model
-3) Projecting each point onto the model surface, matching to an element, and determining the natural coordinates within that element
-4) Output of processed data to csvs
+# Align_FE_DIC
+
+## Overview 
+
+Aimed at manipulating experimental point cloud data for coordinate transformations during alignment with Finite Element (FE) models, and for expressing points in the local element coordinate systems. Expressing points in a common coordinate system enables direct comparison of outputs. This repository was developed for comparing post-processed Digital Image Correlation (DIC) displacement data against [ABAQUS](https://www.3ds.com/products/simulia/abaqus) model output using 4-noded (S4) elements. 
+
+## Features
+
+Align_FE_DIC is built to apply a series of manipulations to time-dependent point cloud data. The time-dependency of the point cloud is represented by storing data across a set of .csv or .vtk files, with filenames suffixed by integers (not necessarily consecutive) with increasing time represented by increasing suffix value. Align_FE_DIC is constructed to apply methods across all spatial points and time indices to produce output with consistent data structure. Data is stored as pandas DataFrames within FileSeries objects, which adapt the functionality of pandas to suit the specified data structure.
+
+Key features include:
+1) Basic data manipulations including extracting data from specific columns, renaming columns, down-sampling in time and space, and filtering using data values and Boolean comparators.
+2) Coordinate shifts and rotations.
+3) Projecting points onto the FE mesh.
+4) Determining equivalent point cloud natural coordinates within quadratic isoparametric elements.
+5) Interpolating FE nodal output to point cloud locations.
+6) Inverse mapping of point cloud measurements onto nodes of the FE mesh.
+
+## How to use
+
+### Overview
+
+Align_FE_DIC is constructed to allow a series of point cloud operations to be performed via a high-level python script. For a quick-start demonstration of key functionality, <code>manage_workflow.py</code> is included as an example of how to set up this script, along with an example FE mesh and point cloud data. Inputs and output point clouds are stored under parent directory "input_output", in subdirectories "input" and "output" respectively. Mesh data and other inputs are stored under the parent directory. This script may be run to test functionality and modified to suit the required application and data structure. Individual methods may also be used as standalone procedures by modifying their <code>if __name__ == "__main__"</code> block and running directly from the command line.
+
+More specific inforrmation on usage is detailed below.
+
+### Point cloud input/output data format
+
+Point cloud data is stored using the FileSeries class. This object is set up to automatically detect all point cloud (.csv or .vtk) files within a specified input folder, read and track data via a list of Pandas DataFrames, append/insert outputs of point cloud operations to specified columns, and write the processed data to a specified output folder with consistent structure to the inputs. The directory structure of the input and outputs is defined by passing the following optional keyword arguments when initialising a FileSeries object, all of which must be character strings:
+- folder: Parent directory of input and output data. If not specified taken as the current working directory.
+- in_subfolder: Subdirectory which contains input .csv or .vtk files. If not specified taken as the parent directory, "folder".
+- out_subfolder: Subdirectory to which outputs will be written. If not specified taken as in_subfolder, and input data is overwritten.
+- del_sub_folder: Subdirectory to which deleted data points are written (due to filtering or dropping points with NA output). If not specified these points are not retained.
+
+### Finite Element mode input/output format
+
+Mesh data is stored via a SurfaceMesh object, which contains node and element definitions, and methods to calculate centroids and normals. This object is initialised either by passing NumPy arrays of nodal coordinates and element connectivities, or string(s) used to identify .csv files containing this information including the directory of the input files. If using .csv input the first row is assumed to be a header and skipped. The SurfaceMesh object must be initialised by passing one of the following combinations of keyword arguments:
+- nodes, connectivity (NumPy arrays): n_nodes x 3 array of (float) nodal coordinates and n_elements x 4 (integer) array of element connectivities.
+- file_string (string): String used to identify both .csv files containing the above nodal and element definitions in format (string + "_nodes.csv", string + "_elements.csv")
+- node_file, el_file (strings): Names of .csv files containing nodal and element definitions respectively.
+
+## Methods of FileSeries class
+
+Basic data processing operations may be performed by calling methods of the FileSeries class. The following methods are included:
+- <code>read_data</code>: Read data from all input files in the specified input folder.
+- <code>down_sam</code>: Down-sample point cloud data at regular time index.
+- <code>truncate_data</code>: Truncate point cloud data up to a maximum time index.
+- <code>extract_qoi</code>: Extract Quantities of Interest from columns of the point cloud data, and rename if necessary
+- <code>filter_by_cond</code>: Filter the data to delete points which satisfy a list of logical conditions applied to columns of the DataFrames. Each condition is passed as a string comprised of a column label, comparative operator, and value agaist which the data is compared. Boolean operators may be used to create compound logical conditions. Each term must be separated by a space for parsing (with the exception of defining a negative number). See manage_workflow.py for examples.
+- <code>update_datatype</code>: Change data type of specified column.
+- <code>apply_func_to_data</code>: Apply a function to selected columns of the DataFrame, and insert outputs at a specified location. Used internally by other standalone methods.
+- <code>dump</code>: Write data to the specified output directory.
+- <code>dump_data_del</code>: Write all data which is marked for deletion to del_sub_folder.
+- <code>dump_nas</code>: Write all data with NAs in any column to del_sub_folder.
+
+### Standalone methods
+
+The main functionality of point cloud coordinate mappings FE model comparisons are implemented in standalone functions, which can either by imported into the high-level workflow script, or run directly from the command line. The following methods are included:
+- <code>downsample_data</code>: Reduce the number of spatial points in the cloud by down-sampling randomly, or at regular intervals.
+- <code>subtract_displacement</code>: Subtract measured displacements from the coordinates of each point. Useful to back-calculate the undeformed DIC geometry.
+- <code>rename_files</code>: Rename files to remove common suffixes from MatchID, e.g. "_0.tiff". Helps paraview identify .csvs as a file series.
+- <code>transform_coords</code>: Apply coordinate transformations (shifts and rotations) using rotation matrix (R) and/or translation vector (T). These inputs can be loaded from a text file using <code>transmat_from_file()</code>. Text file format matches those outputted by [CloudCompare](https://www.danielgm.net/cc/) (see dependencies).
+- <code>get_nat_coords</code>: Project an aligned point cloud onto an FE mesh of quadratic elements, determine equivalent element natural coordinates for each point, and a list of matching element indices.
+- <code>project_points</code>: Project an aligned point cloud onto an FE mesh without finding natural coordinates. (Note: This is less accurate than <code>get_nat_coords</code>, where it is called internally)
+- <code>interp_nodes_to_point</code>: Interpolate FE nodal quantities (e.g displacements, coordinates) to point cloud locations given by element indices and natural coordinates.
+- <code>fit_point_to_node</code>: Inverse mapping of point cloud quantities (e.g. displacements, coordinates) at given element indices and natural coordinates onto the FE nodes using least-squares.
+
+## Dependencies
+
+The methodolgy implicitly assumes that displacment varies within each element as described by the shape functions of an [ABAQUS](https://www.3ds.com/products/simulia/abaqus), 4-noded (S4) shell element. The methodology is also applicable to other Finite Element software and element types, although direct pointwise equivalence may be inexact due to different interpolation functions.
+
+The method used to align the point cloud to the FE model assumes a known rotation matrix (R) and translation vector (T), however, no method is provided for determining inputs which give optimal alignment. The fine-registriation capability of CloudCompare is recommended for performing this alignment and finding R and T. See:
+<https://www.danielgm.net/cc/>
+
+Paraview is recommended for visualising outputs, and alignment with the FE mesh:
+<https://www.paraview.org/>
+
+Python scripts were implemented and tested using Python 3.13.1, and:
+- pandas 2.2.3
+- numpy 2.2.2
+- natsort 8.4.0
+- vtk 9.4.1
+
+## To Do
+
+- Update interp_nodes_to_cloud, and point_to_nodes to SurfaceMesh syntax.
+- Full-field output comparison via residuals.
+- 8-noded shells elements.
+- Track progress via progress bar.
