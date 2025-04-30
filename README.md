@@ -69,15 +69,15 @@ The main point cloud coordinate transformation and FE model comparison functiona
 - `rename_files`: Rename files to remove common suffixes from MatchID, e.g. "_0.tiff". Helps paraview identify *.csvs* as a file series.
 - `transform_coords`: Apply coordinate transformations (shifts and rotations) using rotation matrix (R) and/or translation vector (T). These inputs can be loaded from a text file using `transmat_from_file`. Text file format matches those outputted by [CloudCompare](https://www.danielgm.net/cc/) (see dependencies).
 - `get_nat_coords`: Project an aligned point cloud onto an FE mesh of quadratic elements, determine equivalent element natural coordinates for each point, and a list of matching element indices.
-- `project_points`: Project an aligned point cloud onto an FE mesh without finding natural coordinates. (Note: This is less accurate than `get_nat_coords`, where it is called internally)
+- `project_points`: Project an aligned point cloud onto an FE mesh without finding natural coordinates. (Note: This is less accurate than `get_nat_coords`, where it is called internally).
 - `interp_nodes_to_point`: Interpolate FE nodal quantities (e.g displacements, coordinates) to point cloud locations given by element indices and natural coordinates.
 - `fit_point_to_node`: Inverse mapping of point cloud quantities (e.g. displacements, coordinates) at given element indices and natural coordinates onto the FE nodes using least-squares.
 
 ## Dependencies
 
-The methodolgy implicitly assumes that displacment varies within each element as described by the shape functions of an [ABAQUS](https://www.3ds.com/products/simulia/abaqus), 4-noded (S4) shell element. The methodology is also applicable to other Finite Element software and element types, although direct pointwise equivalence may be inexact due to different interpolation functions.
+The methodolgy implicitly assumes that displacment varies within each element as described by the shape functions of an [ABAQUS](https://www.3ds.com/products/simulia/abaqus) 4-noded (S4) shell element. The methodology is also applicable to other Finite Element software and element types, although direct pointwise equivalence may be inexact due to different interpolation functions.
 
-The method used to align the point cloud to the FE model assumes a known rotation matrix (R) and translation vector (T), however, no method is provided for determining inputs which give optimal alignment. The fine-registriation capability of CloudCompare is recommended for performing this alignment and finding R and T. See:  
+The method used to align the point cloud to the FE model assumes a known rotation matrix (R) and translation vector (T), however, no method is provided for determining transformations which give optimal alignment. The fine-registriation capability of CloudCompare is recommended for performing this alignment, and finding R and T. See:  
 <https://www.danielgm.net/cc/>
 
 Paraview is recommended for visualising outputs, and alignment with the FE mesh:  
@@ -89,9 +89,9 @@ Python scripts were implemented and tested using Python 3.13.1, and:
 - natsort 8.4.0
 - vtk 9.4.1
 
-## To Do
+## To do
 
-- Update interp_nodes_to_cloud, and point_to_nodes to SurfaceMesh syntax.
+- Update `interp_nodes_to_cloud`, and `point_to_nodes` to *SurfaceMesh* syntax.
 - Full-field output comparison via residuals.
 - 8-noded shells elements.
 - Track progress via progress bar.
