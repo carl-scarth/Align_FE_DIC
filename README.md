@@ -6,7 +6,7 @@ Aimed at manipulating experimental point cloud data for coordinate transformatio
 
 ## Features
 
-Align_FE_DIC is built to apply a series of manipulations to time-dependent point cloud data. The time-dependency of the point cloud is represented by storing data across a set of .csv or .vtk files, with filenames suffixed by integers, where increasing time is represented by increasing suffix value. Align_FE_DIC is constructed to apply methods across all spatial points and time indices to produce output with consistent data structure. Data is stored as pandas DataFrames within FileSeries objects, which adapt the functionality of pandas to suit the specified data structure.
+Align_FE_DIC is built to apply a series of manipulations to time-dependent point cloud data. The time-dependency of the point cloud is represented by storing data across a set of .csv or .vtk files, with filenames suffixed by integers, where increasing time is represented by increasing suffix value. Align_FE_DIC is constructed to apply methods across all spatial points and time indices to produce output with consistent data structure. Data is stored as pandas DataFrames within *FileSeries* objects, which adapt the functionality of pandas to suit the specified data structure.
 
 Key features include:
 1) Basic data manipulations including extracting data from specific columns, renaming columns, down-sampling in time and space, and filtering using data values and Boolean comparators.
@@ -20,26 +20,32 @@ Key features include:
 
 ### Overview
 
-Align_FE_DIC is constructed to allow a series of point cloud operations to be performed via a high-level python script. For a quick-start demonstration of key functionality, `manage_workflow.py` is included as an example of how to set up this script, along with an example FE mesh and point cloud data. Inputs and output point clouds are stored under parent directory "input_output", in subdirectories "input" and "output" respectively. Mesh data and other inputs are stored under the parent directory. 
+Align_FE_DIC is constructed to allow a series of point cloud operations to be performed via a high-level python script. 
 
-This example script may be run to test functionality and modified to suit the required application and data structure. Individual methods may also be used as standalone procedures by modifying their `if __name__ == "__main__:` block and running directly from the command line.
+For a quick-start demonstration of key functionality, `manage_workflow.py` is included as an example of how to set up this script, along with an example FE mesh and point cloud data. Inputs and output point clouds are stored under parent directory "input_output", in subdirectories "input" and "output" respectively. Mesh data and other inputs are stored under the parent directory. This example script may be run to test functionality and modified to suit the required application and data structure. 
+
+Individual methods may also be used as standalone procedures by modifying their `if __name__ == "__main__":` block and running directly from the command line.
 
 More specific inforrmation on usage is detailed below.
 
 ### Point cloud input/output data format
 
-Point cloud data is stored using the FileSeries class. This object is set up to automatically detect all point cloud (.csv or .vtk) files within a specified input folder, read and track data via a list of Pandas DataFrames, append/insert outputs of point cloud operations to specified columns, and write the processed data to a specified output folder with consistent structure to the inputs. The directory structure of the input and outputs is defined by passing the following optional keyword arguments when initialising a FileSeries object, all of which must be character strings:
-- folder: Parent directory of input and output data. If not specified taken as the current working directory.
-- in_subfolder: Subdirectory which contains input .csv or .vtk files. If not specified taken as the parent directory, "folder".
-- out_subfolder: Subdirectory to which outputs will be written. If not specified taken as in_subfolder, and input data is overwritten.
-- del_sub_folder: Subdirectory to which deleted data points are written (due to filtering or dropping points with NA output). If not specified these points are not retained.
+Point cloud data is stored using the *FileSeries* class. This object is set up to automatically detect all point cloud (.csv or .vtk) files within a specified input folder, read and track data via a list of Pandas DataFrames, append/insert outputs of point cloud operations to specified columns, and write the processed data to a specified output folder with consistent structure to the inputs. 
 
-### Finite Element mode input/output format
+The directory structure of the input and outputs is defined by passing the following optional keyword arguments when initialising a *FileSeries* object, all of which must be character strings:
+- *folder*: Parent directory of input and output data. If not specified, taken as the current working directory.
+- *in_subfolder*: Subdirectory which contains input .csv or .vtk files. If not specified, taken as the parent directory.
+- *out_subfolder*: Subdirectory to which outputs will be written. If not specified, taken as in_subfolder, and input data is overwritten.
+- *del_sub_folder*: Subdirectory to which deleted data points (due to filtering or dropping points with NA output) are written. If not specified, these points are not retained.
 
-Mesh data is stored via a SurfaceMesh object, which contains node and element definitions, and methods to calculate centroids and normals. This object is initialised either by passing NumPy arrays of nodal coordinates and element connectivities, or string(s) used to identify .csv files containing this information including the directory of the input files. If using .csv input the first row is assumed to be a header and skipped. The SurfaceMesh object must be initialised by passing one of the following combinations of keyword arguments:
-- nodes, connectivity (NumPy arrays): n_nodes x 3 array of (float) nodal coordinates and n_elements x 4 (integer) array of element connectivities.
-- file_string (string): String used to identify both .csv files containing the above nodal and element definitions in format (string + "_nodes.csv", string + "_elements.csv")
-- node_file, el_file (strings): Names of .csv files containing nodal and element definitions respectively.
+### Finite Element model input/output format
+
+Mesh data is stored via the *SurfaceMesh* ckass, which contains node and element definitions, and methods to calculate centroids and normals. This object is initialised either by passing NumPy arrays of nodal coordinates and element connectivities, or string(s) used to identify .csv files containing this information, including the directory. If using .csv input the first row is assumed to be a header, and skipped. 
+
+The SurfaceMesh object must be initialised by passing one of the following combinations of keyword arguments:
+- *nodes*, *connectivity* (NumPy arrays): n_nodes x 3 array of (float) nodal coordinates and n_elements x 4 (integer) array of element connectivities.
+- *file_string* (string): String used to identify both .csv files containing the nodal and element definitions in format (string + "_nodes.csv", string + "_elements.csv")
+- *node_file*, *el_file* (strings): Names of .csv files containing nodal and element definitions respectively.
 
 ## Methods of FileSeries class
 
