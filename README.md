@@ -2,7 +2,7 @@
 
 ## Overview 
 
-Aimed at manipulating experimental point cloud data for coordinate transformations during alignment with Finite Element (FE) models, and expressing points in local element coordinate systems. Expressing points in a common coordinate system enables direct comparison of outputs. This repository was developed for comparing post-processed Digital Image Correlation (DIC) displacement data against [ABAQUS](https://www.3ds.com/products/simulia/abaqus) model output using 4-noded (S4) elements. 
+Aimed at manipulating experimental point cloud data for coordinate transformations during alignment with Finite Element (FE) models, and expressing points in local element coordinate systems. Expressing points in a common coordinate system enables direct comparison of outputs. This repository was developed for comparing Digital Image Correlation (DIC) displacement data against [ABAQUS](https://www.3ds.com/products/simulia/abaqus) model output using 4-noded (S4) elements. 
 
 ## Features
 
@@ -20,9 +20,9 @@ Key features include:
 
 ### Overview
 
-Align_FE_DIC is constructed to allow a series of point cloud operations to be performed via a high-level python script. For a quick-start demonstration of key functionality, `manage_workflow.py` is included as an example of how to set up this script, along with an example FE mesh and point cloud data. 
+Align_FE_DIC is constructed to allow a series of point cloud operations to be performed via a high-level python script. For a quick-start demonstration of key functionality, `manage_workflow.py` is included as an example of how to set up this script, along with an example FE mesh and point cloud data. Inputs and output point clouds are stored under parent directory "input_output", in subdirectories "input" and "output" respectively. Mesh data and other inputs are stored under the parent directory. 
 
-Inputs and output point clouds are stored under parent directory "input_output", in subdirectories "input" and "output" respectively. Mesh data and other inputs are stored under the parent directory. This script may be run to test functionality and modified to suit the required application and data structure. Individual methods may also be used as standalone procedures by modifying their `if \__name__ == "__main__:` block and running directly from the command line.
+This example script may be run to test functionality and modified to suit the required application and data structure. Individual methods may also be used as standalone procedures by modifying their `if __name__ == "__main__:` block and running directly from the command line.
 
 More specific inforrmation on usage is detailed below.
 
