@@ -77,11 +77,11 @@ The main point cloud coordinate transformation and FE model comparison functiona
 
 The methodolgy implicitly assumes that displacment varies within each element as described by the shape functions of an [ABAQUS](https://www.3ds.com/products/simulia/abaqus), 4-noded (S4) shell element. The methodology is also applicable to other Finite Element software and element types, although direct pointwise equivalence may be inexact due to different interpolation functions.
 
-The method used to align the point cloud to the FE model assumes a known rotation matrix (R) and translation vector (T), however, no method is provided for determining inputs which give optimal alignment. The fine-registriation capability of CloudCompare is recommended for performing this alignment and finding R and T. See:
+The method used to align the point cloud to the FE model assumes a known rotation matrix (R) and translation vector (T), however, no method is provided for determining inputs which give optimal alignment. The fine-registriation capability of CloudCompare is recommended for performing this alignment and finding R and T. See:  
 <https://www.danielgm.net/cc/>
 
-Paraview is recommended for visualising outputs, and alignment with the FE mesh:
-  <https://www.paraview.org/>
+Paraview is recommended for visualising outputs, and alignment with the FE mesh:  
+<https://www.paraview.org/>
 
 Python scripts were implemented and tested using Python 3.13.1, and:
 - pandas 2.2.3
