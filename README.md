@@ -33,19 +33,19 @@ More specific inforrmation on usage is detailed below.
 Point cloud data is stored using the *FileSeries* class. This object is set up to automatically detect all point cloud (.csv or .vtk) files within a specified input folder, read and track data via a list of Pandas DataFrames, append/insert outputs of point cloud operations to specified columns, and write the processed data to a specified output folder with consistent structure to the inputs. 
 
 The directory structure of the input and outputs is defined by passing the following optional keyword arguments when initialising a *FileSeries* object, all of which must be character strings:
-- *folder*: Parent directory of input and output data. If not specified, taken as the current working directory.
-- *in_subfolder*: Subdirectory which contains input .csv or .vtk files. If not specified, taken as the parent directory.
-- *out_subfolder*: Subdirectory to which outputs will be written. If not specified, taken as in_subfolder, and input data is overwritten.
-- *del_sub_folder*: Subdirectory to which deleted data points (due to filtering or dropping points with NA output) are written. If not specified, these points are not retained.
+- **folder**: Parent directory of input and output data. If not specified, taken as the current working directory.
+- **in_subfolder**: Subdirectory which contains input .csv or .vtk files. If not specified, taken as the parent directory.
+- **out_subfolder**: Subdirectory to which outputs will be written. If not specified, taken as in_subfolder, and input data is overwritten.
+- **del_sub_folder**: Subdirectory to which deleted data points (due to filtering or dropping points with NA output) are written. If not specified, these points are not retained.
 
 ### Finite Element model input/output format
 
-Mesh data is stored via the *SurfaceMesh* ckass, which contains node and element definitions, and methods to calculate centroids and normals. This object is initialised either by passing NumPy arrays of nodal coordinates and element connectivities, or string(s) used to identify .csv files containing this information, including the directory. If using .csv input the first row is assumed to be a header, and skipped. 
+Mesh data is stored via the *SurfaceMesh* class, which contains node and element definitions, and methods to calculate centroids and normals. This object is initialised either by passing NumPy arrays of nodal coordinates and element connectivities, or string(s) used to identify .csv files containing this information, including the directory. If using .csv input the first row is assumed to be a header, and skipped. 
 
 The SurfaceMesh object must be initialised by passing one of the following combinations of keyword arguments:
-- *nodes*, *connectivity* (NumPy arrays): n_nodes x 3 array of (float) nodal coordinates and n_elements x 4 (integer) array of element connectivities.
-- *file_string* (string): String used to identify both .csv files containing the nodal and element definitions in format (string + "_nodes.csv", string + "_elements.csv")
-- *node_file*, *el_file* (strings): Names of .csv files containing nodal and element definitions respectively.
+- **nodes**, **connectivity** (*NumPy arrays*): n_nodes x 3 array of (*float*) nodal coordinates and n_elements x 4 (*integer*) array of element connectivities.
+- **file_string** (*string*): String used to identify both .csv files containing the nodal and element definitions in format *string + "_nodes.csv"*, *string + "_elements.csv"*.
+- **node_file**, **el_file** (*strings*): Names of .csv files containing nodal and element definitions respectively.
 
 ## Methods of FileSeries class
 
