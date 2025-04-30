@@ -66,7 +66,7 @@ Basic data processing operations may be performed by calling methods of the File
 The main point cloud coordinate transformation and FE model comparison functionality is implemented in standalone functions, which can either by imported into the high-level workflow script, or run directly from the command line. The following methods are included:
 - `downsample_data`: Down-sample to reduce the number of spatial points in the cloud.
 - `subtract_displacement`: Subtract measured displacements from the coordinates of each point. Useful for back-calculating the undeformed DIC geometry.
-- `rename_files`: Rename files to remove common suffixes from MatchID, e.g. "_0.tiff". Helps paraview identify *.csvs* as a file series.
+- `rename_files`: Rename files to remove common suffixes from MatchID, e.g. "*_0.tiff*". Helps paraview identify *.csvs* as a file series.
 - `transform_coords`: Apply coordinate transformations (shifts and rotations) using rotation matrix (R) and/or translation vector (T). These inputs can be loaded from a text file using `transmat_from_file`. Text file format matches those outputted by [CloudCompare](https://www.danielgm.net/cc/) (see dependencies).
 - `get_nat_coords`: Project an aligned point cloud onto an FE mesh of quadratic elements, determine equivalent element natural coordinates for each point, and a list of matching element indices.
 - `project_points`: Project an aligned point cloud onto an FE mesh without finding natural coordinates. (Note: This is less accurate than `get_nat_coords`, where it is called internally).
