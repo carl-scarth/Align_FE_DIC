@@ -60,7 +60,7 @@ class FileSeries:
             print(i)
             File.read_file(dropna, **kwargs)
 
-    def extract_qoi(self, qoi, new_names = [], dropna = True, **kwargs):
+    def extract_qoi(self, qoi, new_names = [], dropna = False, **kwargs):
         # Extracts columns of interest from a csv files, then removes rows with missing values
         # QoI = list of strings indicating which columns are to be extracted
         # new_names = list of updated names which are to be applied to the columns. Must be the same length as QoI
@@ -212,7 +212,7 @@ class File:
             self.data.dropna()
         self.n_points = self.data.shape[0]
 
-    def filter_data(self, qoi, new_names = [], dropna = True, **kwargs):
+    def filter_data(self, qoi, new_names = [], dropna = False, **kwargs):
         self.data = self.data.filter(items=qoi, **kwargs)
         # Rename columns if required
         if new_names:
@@ -222,7 +222,7 @@ class File:
                 warnings.warn("Specified number of new_names did not match the selected number of Colummns. Could not rename.")
         # Drop na values if required
         if dropna:
-            self.data = self.data.dropna(ignore_index=True)
+            self.data = self.data.dropna()
             
         self.n_points = self.data.shape[0]
 
